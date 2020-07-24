@@ -46,7 +46,7 @@ public class GitHubService {
         return repository.listMilestones(GHIssueState.OPEN).toList();
     }
 
-    public GHMilestone getMilestone(Integer milestoneId) throws IOException {
+    public GHMilestone getMilestone(int milestoneId) throws IOException {
         return repository.getMilestone(milestoneId);
     }
 
