@@ -46,7 +46,7 @@ public class GitHubService {
         return repository.listMilestones(GHIssueState.OPEN).toList();
     }
 
-    public GHMilestone getMilestone(Integer milestoneId) throws IOException {
+    public GHMilestone getMilestone(int milestoneId) throws IOException {
         return repository.getMilestone(milestoneId);
     }
 
@@ -54,7 +54,7 @@ public class GitHubService {
         PagedSearchIterable<GHIssue> issues = gitHub.searchIssues().isClosed()
                 .q("is:pr")
                 .q("label:" + backportLabel)
-                .q("repo:" + repository.getName())
+                .q("repo:" + repository.getFullName())
                 .list()
                 .withPageSize(1000);
 
@@ -68,7 +68,6 @@ public class GitHubService {
         return pullRequests;
     }
 
-
     public void markPullRequestAsBackported(GHPullRequest pullRequest, GHMilestone milestone) throws IOException {
         // this doesn't seem to work :/
         pullRequest.setMilestone(milestone);
@@ -76,6 +75,10 @@ public class GitHubService {
 
         // we also need to affect the milestone to all the potentially linked issues
         // I haven't looked if there is already an API to get them (without parsing the content of the message)
+    }
+
+    public GHMilestone createMilestone(String title, String description) throws IOException {
+        return repository.createMilestone(title, description);
     }
 
     private enum PullRequestComparator implements Comparator<GHPullRequest> {
