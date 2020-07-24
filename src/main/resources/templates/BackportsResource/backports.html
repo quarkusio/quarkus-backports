@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>Quarkus - Backports</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" integrity="sha512-8bHTC73gkZ7rZ7vpqUQThUDhqcNFyYi2xgDgPDHc+GXVGHXq+xPjynxIopALmOPqzo9JZj0k6OqqewdGO3EsrQ==" crossorigin="anonymous" />
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<style type="text/css">
+		.ui.menu .item {
+			font-size: 20px;
+		}
+		.presentation {
+			margin-top: 5em;
+		}
+	</style>
+</head>
+<body>
+	<div class="ui fixed inverted menu">
+		<a class="header item" href="https://github.com/quarkusio/quarkus/pulls">
+			<img class="logo" src="https://quarkus.io/assets/images/quarkus_logo_horizontal_rgb_reverse.svg" alt="Quarkus logo" style="width:200px;">
+		</a>
+		<span class="header item">
+			Backports for {milestone.title}
+		</span>
+	</div>
+	<div class="presentation">
+		<div class="ui main container">
+			<table class="ui celled striped table">
+				<thead>
+					<tr>
+						<th class="fourteen wide">Pull Request</th>
+						<th class="one wide">Cherry Pick</th>
+						<th class="one wide">Done</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#for pr in prs}
+					{#set commits=pr.listCommits.toList}
+					<tr>
+						<td>
+							<div><a href="{pr.htmlUrl}">{pr.title}</a> <span class="ui label">#{pr.number}</span> <span class="ui image label"><img src="{pr.user.avatarUrl}" /> {pr.user.login}</span></div>
+							<div class="ui relaxed divided list">
+								{#for commit in commits}
+								<div class="item">
+									<div class="right floated content">
+										<span class="ui middle aligned label"><code><a href="{commit.url}">{commit.abbreviatedSha}</a></code></span>
+									</div>
+									<i class="map marker alternate middle aligned icon"></i>
+									<div class="middle aligned content">
+										<a class="header"><a href="{commit.url}">{commit.abbreviatedMessage}</a></a>
+									</div>
+								</div>
+								{/}
+							</div>
+						</td>
+						<td class="center aligned">
+							<div class="ui labeled button">
+								<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.sha} {/}">
+									<i class="paste icon"></i>
+								</div>
+								<a class="ui basic label">{commits.size}</a>
+							</div>
+						</td>
+						<td class="center aligned">
+							<div class="ui icon button blue" id="mark-backported-{pr.number}">
+								<i class="reply icon"></i>
+							</div>
+							<script type="text/javascript">
+								$('#mark-backported-{pr.number}').click(function() {
+									$('#mark-backported-{pr.number}').prop("onclick", null).off("click");
+									$('#mark-backported-{pr.number}').addClass('loading').removeClass('blue');
+
+									$.ajax('/backports/{milestone.number}/backported/{pr.number}/').done(function() {
+										$('#mark-backported-{pr.number}').removeClass('loading').addClass('positive disabled');
+										$('#mark-backported-{pr.number} i').removeClass('reply').addClass('check');
+									}).fail(function() {
+										$('#mark-backported-{pr.number}').removeClass('loading').addClass('negative disabled');
+										$('#mark-backported-{pr.number} i').removeClass('reply').addClass('exclamation triangle');
+									});
+								});
+							</script>
+						</td>
+					</tr>
+					{/}
+					{/}
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Javascripts -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js" integrity="sha512-dqw6X88iGgZlTsONxZK9ePmJEFrmHwpuMrsUChjAw1mRUhUITE5QU9pkcSox+ynfLhL15Sv2al5A0LVyDCmtUw==" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js"></script>
+	<script type="text/javascript">
+		new ClipboardJS('.clipboard');
+	</script>
+</body>
+</html>
