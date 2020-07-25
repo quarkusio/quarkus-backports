@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -40,14 +41,9 @@ public class BackportsResource {
     @Path("/backports/{milestone}/")
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance backports(@PathParam("milestone") final Milestone milestone) throws IOException {
+        validateMilestone(milestone);
         List<PullRequest> pullRequests = gitHub.getBackportCandidatesPullRequests();
-        //TODO: Review it, because the title is not sent in the request
-        Milestone titledMilestone = gitHub.getOpenMilestones()
-                .stream()
-                .filter(m -> m.number == milestone.number)
-                .findFirst()
-                .orElse(milestone);
-        return Templates.backports(titledMilestone, pullRequests);
+        return Templates.backports(milestone, pullRequests);
     }
 
     @GET
@@ -55,8 +51,15 @@ public class BackportsResource {
     @Path("/backports/{milestone}/backported/{pullRequest}/")
     public String markAsBackported(@PathParam("milestone") Milestone milestone,
                                    @PathParam("pullRequest") PullRequest pullRequest) throws IOException {
+        validateMilestone(milestone);
         gitHub.markPullRequestAsBackported(pullRequest, milestone);
         return "SUCCESS";
+    }
+
+    private void validateMilestone(Milestone milestone) throws IOException {
+        if (gitHub.getOpenMilestones().stream().noneMatch(m -> m.title.equals(milestone.title))) {
+            throw new BadRequestException("Milestone not found: " + milestone.title);
+        }
     }
 
     @TemplateExtension

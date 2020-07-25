@@ -12,6 +12,7 @@ import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Milestone;
 import io.quarkus.backports.model.PullRequest;
 import io.quarkus.backports.model.User;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.api.CheckedTemplate;
 import io.vertx.core.json.JsonArray;
@@ -45,6 +46,7 @@ public class GitHubService {
         this.backportLabel = backportLabel;
     }
 
+    @CacheResult(cacheName = "github-cache")
     public List<Milestone> getOpenMilestones() throws IOException {
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
                 .put("query", Templates.listMilestones(repository).render()));

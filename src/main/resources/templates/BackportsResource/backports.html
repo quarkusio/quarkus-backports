@@ -65,7 +65,7 @@
 									$('#mark-backported-{pr.number}').prop("onclick", null).off("click");
 									$('#mark-backported-{pr.number}').addClass('loading').removeClass('blue');
 
-									$.ajax('/backports/{milestone.number}/backported/{pr.number}/').done(function() {
+									$.ajax('/backports/{milestone.title}/backported/{pr.number}/').done(function() {
 										$('#mark-backported-{pr.number}').removeClass('loading').addClass('positive disabled');
 										$('#mark-backported-{pr.number} i').removeClass('arrow alternate circle right').addClass('check');
 										$('#mark-backported-{pr.number}').closest('tr').addClass('positive');

@@ -6,7 +6,6 @@
           milestones (last:100) {
             edges {
               node {
-                number
                 title
               }
             }
