@@ -29,12 +29,12 @@
 				</thead>
 				<tbody>
 					{#for pr in prs}
-					{#set commits=pr.listCommits.toList}
+					{#set commits=pr.commits}
 					<tr>
 						<td>
 							<div>
-								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.htmlUrl}">{pr.title}</a>
-								<span style="float:right"><span class="ui image label"><img src="{pr.user.avatarUrl}" /> {pr.user.login}</span></span>
+								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.url}">{pr.title}</a>
+								<span style="float:right"><span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span></span>
 							</div>
 							<div class="ui piled segment commits" id="commits-{pr.number}">
 								<div class="ui relaxed divided list">
@@ -42,8 +42,8 @@
 									<div class="item">
 										<div class="content">
 											<i class="map marker alternate icon"></i>
-											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedSha}</a></code>
-											<a href="{commit.url}">{commit.abbreviatedMessage}</a>
+											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
+											<a href="{commit.url}">{commit.message}</a>
 										</div>
 									</div>
 									{/}
@@ -51,7 +51,7 @@
 							</div>
 						</td>
 						<td class="center aligned">
-							<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.sha} {/}">
+							<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.abbreviatedOid} {/}">
 								<i class="clipboard outline icon"></i>
 								<div class="floating ui blue mini label">{commits.size}</div>
 							</div>

@@ -1,0 +1,28 @@
+{
+  "data": {
+    "search": {
+      "edges": [
+        {
+          "node": {
+            "milestones": {
+              "edges": [
+                {
+                  "node": {
+                    "number": 1,
+                    "title": "One"
+                  }
+                },
+                {
+                  "node": {
+                    "number": 2,
+                    "title": "Two"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

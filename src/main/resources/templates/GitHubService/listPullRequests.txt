@@ -1,0 +1,33 @@
+{
+  search(query: "repo:{repo} is:pr label:{label}", type: ISSUE, last: 100) {
+    edges {
+      node {
+        ... on PullRequest {
+          number
+          url
+          title
+          createdAt
+          milestone {
+            title
+          }
+          author {
+            login
+            avatarUrl
+          }
+          commits(last: 100) {
+            edges {
+              node {
+                url
+                commit {
+                  url
+                  message
+                  abbreviatedOid
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
