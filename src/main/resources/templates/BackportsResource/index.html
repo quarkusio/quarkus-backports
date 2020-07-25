@@ -5,14 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<title>Quarkus - Backports</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" integrity="sha512-8bHTC73gkZ7rZ7vpqUQThUDhqcNFyYi2xgDgPDHc+GXVGHXq+xPjynxIopALmOPqzo9JZj0k6OqqewdGO3EsrQ==" crossorigin="anonymous" />
-	<style type="text/css">
-		.ui.menu .item {
-			font-size: 20px;
-		}
-		.presentation {
-			margin-top: 8em;
-		}
-	</style>
+	<link rel="stylesheet" href="/css/main.css" />
 </head>
 <body>
 	<div class="ui fixed inverted menu">
@@ -23,25 +16,34 @@
 			Backports
 		</span>
 	</div>
-	<div class="presentation">
+	<div class="milestone-choice">
 		<div class="ui main container">
-			<div class="ui massive form">
-				<div class="field">
-					<label>Choose a milestone</label>
-					<select class="ui search dropdown" id="milestone">
-						<option value="">Select Milestone</option>
-						{#for milestone : milestones}
-							<option value="{milestone.number}">{milestone.title}</option>
-						{/}
-					</select>
+			<div class="ui two column centered grid">
+				<div class="column">
+					<div class="ui tall very padded piled segment">
+						<h3 class="ui header">Choose a milestone</h3>
+						<div class="content">
+							<div class="ui form">
+								<div class="field">
+									<label>Milestone to backport to</label>
+									<select class="ui search dropdown" id="milestone">
+										<option value="">Select Milestone</option>
+										{#for milestone : milestones}
+											<option value="{milestone.number}">{milestone.title}</option>
+										{/}
+									</select>
+								</div>
+								<div class="ui submit green button" id="lets-backport">Let's backport!</div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div class="ui submit button" id="lets-backport" onclick="javascript:window.url">Let's backport!</div>
 			</div>
 		</div>
 	</div>
 
 	<!-- Javascripts -->
-	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js" integrity="sha512-dqw6X88iGgZlTsONxZK9ePmJEFrmHwpuMrsUChjAw1mRUhUITE5QU9pkcSox+ynfLhL15Sv2al5A0LVyDCmtUw==" crossorigin="anonymous"></script>
 	<script type="text/javascript">
 		$('select.dropdown').dropdown();

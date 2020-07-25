@@ -5,15 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<title>Quarkus - Backports</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.css" integrity="sha512-8bHTC73gkZ7rZ7vpqUQThUDhqcNFyYi2xgDgPDHc+GXVGHXq+xPjynxIopALmOPqzo9JZj0k6OqqewdGO3EsrQ==" crossorigin="anonymous" />
-	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-	<style type="text/css">
-		.ui.menu .item {
-			font-size: 20px;
-		}
-		.presentation {
-			margin-top: 5em;
-		}
-	</style>
+	<link rel="stylesheet" href="/css/main.css" />
+	<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
 </head>
 <body>
 	<div class="ui fixed inverted menu">
@@ -24,13 +17,13 @@
 			Backports for {milestone.title}
 		</span>
 	</div>
-	<div class="presentation">
+	<div class="main-content">
 		<div class="ui main container">
 			<table class="ui celled striped table">
 				<thead>
 					<tr>
 						<th class="fourteen wide">Pull Request</th>
-						<th class="one wide">Cherry Pick</th>
+						<th class="one wide">Cherry&nbsp;Pick</th>
 						<th class="one wide">Done</th>
 					</tr>
 				</thead>
@@ -39,32 +32,33 @@
 					{#set commits=pr.listCommits.toList}
 					<tr>
 						<td>
-							<div><a href="{pr.htmlUrl}">{pr.title}</a> <span class="ui label">#{pr.number}</span> <span class="ui image label"><img src="{pr.user.avatarUrl}" /> {pr.user.login}</span></div>
-							<div class="ui relaxed divided list">
-								{#for commit in commits}
-								<div class="item">
-									<div class="right floated content">
-										<span class="ui middle aligned label"><code><a href="{commit.url}">{commit.abbreviatedSha}</a></code></span>
+							<div>
+								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.htmlUrl}">{pr.title}</a>
+								<span style="float:right"><span class="ui image label"><img src="{pr.user.avatarUrl}" /> {pr.user.login}</span></span>
+							</div>
+							<div class="ui piled segment commits" id="commits-{pr.number}">
+								<div class="ui relaxed divided list">
+									{#for commit in commits}
+									<div class="item">
+										<div class="content">
+											<i class="map marker alternate icon"></i>
+											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedSha}</a></code>
+											<a href="{commit.url}">{commit.abbreviatedMessage}</a>
+										</div>
 									</div>
-									<i class="map marker alternate middle aligned icon"></i>
-									<div class="middle aligned content">
-										<a class="header"><a href="{commit.url}">{commit.abbreviatedMessage}</a></a>
-									</div>
+									{/}
 								</div>
-								{/}
 							</div>
 						</td>
 						<td class="center aligned">
-							<div class="ui labeled button">
-								<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.sha} {/}">
-									<i class="paste icon"></i>
-								</div>
-								<a class="ui basic label">{commits.size}</a>
+							<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.sha} {/}">
+								<i class="clipboard outline icon"></i>
+								<div class="floating ui blue mini label">{commits.size}</div>
 							</div>
 						</td>
 						<td class="center aligned">
 							<div class="ui icon button blue" id="mark-backported-{pr.number}">
-								<i class="reply icon"></i>
+								<i class="arrow alternate circle right icon"></i>
 							</div>
 							<script type="text/javascript">
 								$('#mark-backported-{pr.number}').click(function() {
@@ -73,7 +67,9 @@
 
 									$.ajax('/backports/{milestone.number}/backported/{pr.number}/').done(function() {
 										$('#mark-backported-{pr.number}').removeClass('loading').addClass('positive disabled');
-										$('#mark-backported-{pr.number} i').removeClass('reply').addClass('check');
+										$('#mark-backported-{pr.number} i').removeClass('arrow alternate circle right').addClass('check');
+										$('#mark-backported-{pr.number}').closest('tr').addClass('positive');
+										$('#commits-{pr.number}').toggle();
 									}).fail(function() {
 										$('#mark-backported-{pr.number}').removeClass('loading').addClass('negative disabled');
 										$('#mark-backported-{pr.number} i').removeClass('reply').addClass('exclamation triangle');
@@ -91,7 +87,7 @@
 
 	<!-- Javascripts -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js" integrity="sha512-dqw6X88iGgZlTsONxZK9ePmJEFrmHwpuMrsUChjAw1mRUhUITE5QU9pkcSox+ynfLhL15Sv2al5A0LVyDCmtUw==" crossorigin="anonymous"></script>
-	<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 	<script type="text/javascript">
 		new ClipboardJS('.clipboard');
 	</script>
