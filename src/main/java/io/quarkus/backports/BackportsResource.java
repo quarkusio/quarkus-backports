@@ -37,17 +37,18 @@ public class BackportsResource {
     }
 
     @GET
-    @Path("/backports/{milestoneId}/")
+    @Path("/backports/{milestone}/")
     @Produces(MediaType.TEXT_HTML)
-    public TemplateInstance backports(@PathParam GHMilestone milestone) throws IOException {
+    public TemplateInstance backports(@PathParam("milestone") GHMilestone milestone) throws IOException {
         List<GHPullRequest> pullRequests = gitHub.getBackportCandidatesPullRequests();
         return Templates.backports(milestone, pullRequests);
     }
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("/backports/{milestoneId}/backported/{pullRequestId}/")
-    public String markAsBackported(@PathParam GHMilestone milestone, @PathParam GHPullRequest pullRequest) throws IOException {
+    @Path("/backports/{milestone}/backported/{pullRequest}/")
+    public String markAsBackported(@PathParam("milestone") GHMilestone milestone,
+                                   @PathParam("pullRequest") GHPullRequest pullRequest) throws IOException {
         gitHub.markPullRequestAsBackported(pullRequest, milestone);
         return "SUCCESS";
     }
