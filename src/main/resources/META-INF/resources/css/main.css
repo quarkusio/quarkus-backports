@@ -1,0 +1,23 @@
+.ui.menu .item {
+	font-size: 20px;
+}
+
+.milestone-choice {
+	margin-top: 16em;
+}
+
+.main-content {
+	margin-top: 5em;
+}
+.pr-title {
+	font-weight: bold;
+	font-size: 1.1em;
+}
+.ui.piled.segment.commits {
+	margin: 1em 0;
+	margin-left: 4em;
+	margin-bottom: 0;
+}
+.clipboard {
+	position: relative;
+}
