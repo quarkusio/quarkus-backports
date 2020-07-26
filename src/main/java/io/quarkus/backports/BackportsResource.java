@@ -57,7 +57,7 @@ public class BackportsResource {
     }
 
     private void validateMilestone(Milestone milestone) throws IOException {
-        if (gitHub.getOpenMilestones().stream().noneMatch(m -> m.title.equals(milestone.title))) {
+        if (!gitHub.getOpenMilestones().contains(milestone)) {
             throw new BadRequestException("Milestone not found: " + milestone.title);
         }
     }
