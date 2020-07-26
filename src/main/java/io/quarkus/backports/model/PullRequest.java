@@ -2,6 +2,7 @@ package io.quarkus.backports.model;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class PullRequest {
     public int number;
@@ -18,12 +19,15 @@ public class PullRequest {
 
     public List<Commit> commits;
 
+    public Set<Issue> linkedIssues;
+
     public PullRequest(String number) {
         this.number = Integer.parseInt(number);
     }
 
     public PullRequest() {
     }
+
 
     @Override
     public boolean equals(Object o) {

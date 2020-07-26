@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.quarkus.backports.graphql.GraphQLClient;
 import io.quarkus.backports.model.Commit;
+import io.quarkus.backports.model.Issue;
 import io.quarkus.backports.model.Milestone;
 import io.quarkus.backports.model.PullRequest;
 import io.quarkus.backports.model.User;
@@ -96,6 +99,20 @@ public class GitHubService {
             pullRequest.url = pr.getString("url");
             pullRequest.author = pr.getJsonObject("author").mapTo(User.class);
             pullRequest.commits = commitList;
+
+            // Linked issues are available through CONNECTED and DISCONNECTED events
+            // As these events can happen multiple times, we need to retain only events in an odd number
+            // (even means the issue was connected and disconnected)
+            Set<Issue> issues = new TreeSet<>();
+            final JsonArray timelineItems = pr.getJsonObject("timelineItems").getJsonArray("nodes");
+            for (int j = 0; j < timelineItems.size(); j++) {
+                Issue issue = timelineItems.getJsonObject(j).getJsonObject("subject").mapTo(Issue.class);
+                // Add the issue to the Set. If it already exists, remove
+                if (!issues.add(issue)) {
+                    issues.remove(issue);
+                }
+            }
+            pullRequest.linkedIssues = issues;
             prList.add(pullRequest);
         }
         return prList;
