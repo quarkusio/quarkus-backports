@@ -58,12 +58,10 @@ public class GitHubService {
         List<Milestone> milestoneList = new ArrayList<>();
         JsonArray milestones = response.getJsonObject("data")
                 .getJsonObject("search")
-                .getJsonArray("edges").getJsonObject(0)
-                .getJsonObject("node").getJsonObject("milestones")
-                .getJsonArray("edges");
+                .getJsonArray("nodes").getJsonObject(0)
+                .getJsonObject("milestones").getJsonArray("nodes");
         for (int i = 0; i < milestones.size(); i++) {
-            JsonObject milestone = milestones.getJsonObject(i).getJsonObject("node");
-            milestoneList.add(milestone.mapTo(Milestone.class));
+            milestoneList.add(milestones.getJsonObject(i).mapTo(Milestone.class));
         }
         return milestoneList;
     }
@@ -78,13 +76,13 @@ public class GitHubService {
         List<PullRequest> prList = new ArrayList<>();
         JsonArray pullRequests = response.getJsonObject("data")
                 .getJsonObject("search")
-                .getJsonArray("edges");
+                .getJsonArray("nodes");
         for (int i = 0; i < pullRequests.size(); i++) {
-            JsonObject pr = pullRequests.getJsonObject(i).getJsonObject("node");
-            JsonArray commits = pr.getJsonObject("commits").getJsonArray("edges");
+            JsonObject pr = pullRequests.getJsonObject(i);
+            JsonArray commits = pr.getJsonObject("commits").getJsonArray("nodes");
             List<Commit> commitList = new ArrayList<>();
             for (int j = 0; j < commits.size(); j++) {
-                JsonObject commitNode = commits.getJsonObject(j).getJsonObject("node");
+                JsonObject commitNode = commits.getJsonObject(j);
                 Commit commit = commitNode.getJsonObject("commit").mapTo(Commit.class);
                 commit.url = commitNode.getString("url");
                 commitList.add(commit);

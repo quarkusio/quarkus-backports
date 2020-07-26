@@ -1,14 +1,10 @@
 {
   search(query: "repo:{repo}", type: REPOSITORY, last: 100) {
-    edges {
-      node {
-        ... on Repository {
-          milestones (last:100) {
-            edges {
-              node {
-                title
-              }
-            }
+    nodes {
+      ... on Repository {
+        milestones (last:100) {
+          nodes {
+            title
           }
         }
       }
