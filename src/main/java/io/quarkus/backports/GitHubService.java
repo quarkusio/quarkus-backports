@@ -2,6 +2,7 @@ package io.quarkus.backports;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -88,6 +89,8 @@ public class GitHubService {
                 commit.url = commitNode.getString("url");
                 commitList.add(commit);
             }
+            // Sort by commit date
+            Collections.sort(commitList);
             PullRequest pullRequest = new PullRequest();
             pullRequest.number = pr.getInteger("number");
             pullRequest.createdAt = pr.getString("createdAt");
