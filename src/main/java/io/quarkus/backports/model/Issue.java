@@ -8,6 +8,7 @@ public class Issue implements Comparable<Issue> {
     public String title;
     public String body;
     public String url;
+    public User author;
 
     public Issue(String number) {
         this.number = Integer.parseInt(number);

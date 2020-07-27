@@ -35,6 +35,10 @@
                   title
                   url
                   body
+                  author {
+                    login
+                    avatarUrl
+                  }
                 }
               }
             }
