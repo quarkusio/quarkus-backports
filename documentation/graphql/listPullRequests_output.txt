@@ -22,7 +22,8 @@
           "author": {
             "login": "gastaldi",
             "avatarUrl": "https://avatars1.githubusercontent.com/u/54133?u=8832e77a7acb3be76f55f788a93dc5476289c53b&v=4",
-            "name": "George Gastaldi"
+            "name": "George Gastaldi",
+            "url": "https://github.com/gastaldi"
           },
           "commits": {
             "nodes": [
@@ -47,7 +48,8 @@
                   "body": "Issue description",
                   "author": {
                     "login": "gastaldi",
-                    "avatarUrl": "https://avatars1.githubusercontent.com/u/54133?u=8832e77a7acb3be76f55f788a93dc5476289c53b&v=4"
+                    "avatarUrl": "https://avatars1.githubusercontent.com/u/54133?u=8832e77a7acb3be76f55f788a93dc5476289c53b&v=4",
+                    "url": "https://github.com/gastaldi"
                   }
                 }
               }

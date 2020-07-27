@@ -21,6 +21,7 @@
             login
             avatarUrl
             name
+            url
           }
         }
         commits(last: 100) {
@@ -50,6 +51,7 @@
                       login
                       avatarUrl
                       name
+                      url
                     }
                   }
                 }
