@@ -2,93 +2,140 @@ package io.quarkus.backports;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import io.quarkus.backports.graphql.GraphQLClient;
+import io.quarkus.backports.model.Commit;
+import io.quarkus.backports.model.Issue;
+import io.quarkus.backports.model.Milestone;
+import io.quarkus.backports.model.PullRequest;
+import io.quarkus.backports.model.User;
+import io.quarkus.cache.CacheResult;
+import io.quarkus.qute.TemplateInstance;
+import io.quarkus.qute.api.CheckedTemplate;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.kohsuke.github.GHIssue;
-import org.kohsuke.github.GHIssueState;
-import org.kohsuke.github.GHMilestone;
-import org.kohsuke.github.GHPullRequest;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.PagedSearchIterable;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
 public class GitHubService {
 
-    private final GitHub gitHub;
+    @Inject
+    @RestClient
+    GraphQLClient graphQLClient;
 
-    private final GHRepository repository;
+    private final String token;
+
+    private final String repository;
 
     private final String backportLabel;
 
     @Inject
     public GitHubService(
+            @ConfigProperty(name = "backports.token")
+                    String token,
             @ConfigProperty(name = "backports.repository")
                     String repositoryName,
             @ConfigProperty(name = "backports.label")
-                    String backportLabel) throws IOException {
-        this.gitHub = GitHubBuilder.fromPropertyFile().build();
-        this.repository = gitHub.getRepository(repositoryName);
+                    String backportLabel) {
+        this.token = "Bearer " + token;
+        this.repository = repositoryName;
         this.backportLabel = backportLabel;
     }
 
-    public GHPullRequest getPullRequest(int pullRequestId) throws IOException {
-        return repository.getPullRequest(pullRequestId);
-    }
-
-    public List<GHMilestone> getOpenMilestones() throws IOException {
-        return repository.listMilestones(GHIssueState.OPEN).toList();
-    }
-
-    public GHMilestone getMilestone(int milestoneId) throws IOException {
-        return repository.getMilestone(milestoneId);
-    }
-
-    public List<GHPullRequest> getBackportCandidatesPullRequests() throws IOException {
-        PagedSearchIterable<GHIssue> issues = gitHub.searchIssues().isClosed()
-                .q("is:pr")
-                .q("label:" + backportLabel)
-                .q("repo:" + repository.getFullName())
-                .list()
-                .withPageSize(1000);
-
-        // Unfortunately, I haven't found a proper way to get GHPullRequest objects with a query
-        // and we have too many closed ones to get them all and filter them locally
-        List<GHPullRequest> pullRequests = new ArrayList<>();
-        for (GHIssue issue : issues) {
-            pullRequests.add(repository.getPullRequest(issue.getNumber()));
+    @CacheResult(cacheName = "github-cache")
+    public List<Milestone> getOpenMilestones() throws IOException {
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query", Templates.listMilestones(repository).render()));
+        // Any errors?
+        if (response.getJsonArray("errors") != null) {
+            throw new IOException(response.toString());
         }
-        pullRequests.sort(PullRequestComparator.INSTANCE);
-        return pullRequests;
-    }
-
-    public void markPullRequestAsBackported(GHPullRequest pullRequest, GHMilestone milestone) throws IOException {
-        // this doesn't seem to work :/
-        pullRequest.setMilestone(milestone);
-        pullRequest.removeLabels(backportLabel);
-
-        // we also need to affect the milestone to all the potentially linked issues
-        // I haven't looked if there is already an API to get them (without parsing the content of the message)
-    }
-
-    public GHMilestone createMilestone(String title, String description) throws IOException {
-        return repository.createMilestone(title, description);
-    }
-
-    private enum PullRequestComparator implements Comparator<GHPullRequest> {
-        INSTANCE;
-
-        @Override
-        public int compare(GHPullRequest o1, GHPullRequest o2) {
-            return o1.getMergedAt().compareTo(o2.getMergedAt());
+        List<Milestone> milestoneList = new ArrayList<>();
+        JsonArray milestones = response.getJsonObject("data")
+                .getJsonObject("search")
+                .getJsonArray("nodes").getJsonObject(0)
+                .getJsonObject("milestones").getJsonArray("nodes");
+        for (int i = 0; i < milestones.size(); i++) {
+            milestoneList.add(milestones.getJsonObject(i).mapTo(Milestone.class));
         }
+        return milestoneList;
     }
 
+    public List<PullRequest> getBackportCandidatesPullRequests() throws IOException {
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query", Templates.listPullRequests(repository, backportLabel).render()));
+        // Any errors?
+        if (response.getJsonArray("errors") != null) {
+            throw new IOException(response.toString());
+        }
+        List<PullRequest> prList = new ArrayList<>();
+        JsonArray pullRequests = response.getJsonObject("data")
+                .getJsonObject("search")
+                .getJsonArray("nodes");
+        for (int i = 0; i < pullRequests.size(); i++) {
+            JsonObject pr = pullRequests.getJsonObject(i);
+            JsonArray commits = pr.getJsonObject("commits").getJsonArray("nodes");
+            List<Commit> commitList = new ArrayList<>();
+            for (int j = 0; j < commits.size(); j++) {
+                JsonObject commitNode = commits.getJsonObject(j);
+                Commit commit = commitNode.getJsonObject("commit").mapTo(Commit.class);
+                commit.url = commitNode.getString("url");
+                commitList.add(commit);
+            }
+            // Sort by commit date
+            Collections.sort(commitList);
+            PullRequest pullRequest = new PullRequest();
+            pullRequest.number = pr.getInteger("number");
+            pullRequest.createdAt = pr.getString("createdAt");
+            pullRequest.title = pr.getString("title");
+            pullRequest.url = pr.getString("url");
+            pullRequest.author = pr.getJsonObject("author").mapTo(User.class);
+            pullRequest.commits = commitList;
+
+            // Linked issues are available through CONNECTED and DISCONNECTED events
+            // As these events can happen multiple times, we need to retain only events in an odd number
+            // (even means the issue was connected and disconnected)
+            Set<Issue> issues = new TreeSet<>();
+            final JsonArray timelineItems = pr.getJsonObject("timelineItems").getJsonArray("nodes");
+            for (int j = 0; j < timelineItems.size(); j++) {
+                Issue issue = timelineItems.getJsonObject(j).getJsonObject("subject").mapTo(Issue.class);
+                // Add the issue to the Set. If it already exists, remove
+                if (!issues.add(issue)) {
+                    issues.remove(issue);
+                }
+            }
+            pullRequest.linkedIssues = issues;
+            prList.add(pullRequest);
+        }
+        return prList;
+    }
+
+    public void markPullRequestAsBackported(PullRequest pullRequest, Milestone milestone) throws IOException {
+    }
+
+    public Milestone createMilestone(String title, String description) throws IOException {
+        return null;
+    }
+
+    @CheckedTemplate
+    private static class Templates {
+        /**
+         * Returns all the milestones from the repository
+         */
+        public static native TemplateInstance listMilestones(String repo);
+
+        /**
+         * Returns the (closed?) pull requests that match the specified label
+         */
+        public static native TemplateInstance listPullRequests(String repo, String label);
+    }
 
 }

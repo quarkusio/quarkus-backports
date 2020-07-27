@@ -26,10 +26,10 @@ Finally, you mark the backport of this pull request as done:
 
 ## Setup
 
-In your home directory, create a .github file containing your OAuth token:
+In your application directory, create a .env file containing your OAuth token:
 
 ```
-oauth=<TOKEN>
+BACKPORTS_TOKEN=<TOKEN>
 ```
 
 Obviously, this token needs write permissions for the repository.

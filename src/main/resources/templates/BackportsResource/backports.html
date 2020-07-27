@@ -29,12 +29,20 @@
 				</thead>
 				<tbody>
 					{#for pr in prs}
-					{#set commits=pr.listCommits.toList}
+					{#set commits=pr.commits}
 					<tr>
 						<td>
 							<div>
-								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.htmlUrl}">{pr.title}</a>
-								<span style="float:right"><span class="ui image label"><img src="{pr.user.avatarUrl}" /> {pr.user.login}</span></span>
+								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.url}">{pr.title}</a>
+								<span style="float:right">
+									{#if pr.linkedIssues.size > 0}
+										<div class="ui icon mini button issues" data-variation="wide" data-position="bottom center" data-html="<div class='header'>Linked issues</div><div class='content'>{#for issue in pr.linkedIssues}&rsaquo; <a href='#todo-link'>#{issue.number}</a> {issue.title}<br />{/}</div>">
+											<i class="exclamation circle icon"></i>
+											<span class="floating ui red mini circular label">{pr.linkedIssues.size}</span>
+										</div>
+									{/}
+									<span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span>
+								</span>
 							</div>
 							<div class="ui piled segment commits" id="commits-{pr.number}">
 								<div class="ui relaxed divided list">
@@ -42,8 +50,8 @@
 									<div class="item">
 										<div class="content">
 											<i class="map marker alternate icon"></i>
-											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedSha}</a></code>
-											<a href="{commit.url}">{commit.abbreviatedMessage}</a>
+											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
+											<a href="{commit.url}">{commit.message}</a>
 										</div>
 									</div>
 									{/}
@@ -51,9 +59,9 @@
 							</div>
 						</td>
 						<td class="center aligned">
-							<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.sha} {/}">
+							<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.abbreviatedOid} {/}">
 								<i class="clipboard outline icon"></i>
-								<div class="floating ui blue mini label">{commits.size}</div>
+								<div class="floating ui blue mini circular label">{commits.size}</div>
 							</div>
 						</td>
 						<td class="center aligned">
@@ -65,7 +73,7 @@
 									$('#mark-backported-{pr.number}').prop("onclick", null).off("click");
 									$('#mark-backported-{pr.number}').addClass('loading').removeClass('blue');
 
-									$.ajax('/backports/{milestone.number}/backported/{pr.number}/').done(function() {
+									$.ajax('/backports/{milestone.title}/backported/{pr.number}/').done(function() {
 										$('#mark-backported-{pr.number}').removeClass('loading').addClass('positive disabled');
 										$('#mark-backported-{pr.number} i').removeClass('arrow alternate circle right').addClass('check');
 										$('#mark-backported-{pr.number}').closest('tr').addClass('positive');
@@ -90,6 +98,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 	<script type="text/javascript">
 		new ClipboardJS('.clipboard');
+		$('.button.issues').popup({ on: 'click' });
 	</script>
 </body>
 </html>
