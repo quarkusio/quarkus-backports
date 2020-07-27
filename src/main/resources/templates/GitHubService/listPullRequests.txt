@@ -17,9 +17,11 @@
           title
         }
         author {
-          login
-          avatarUrl
-          url
+          ... on User {
+            login
+            avatarUrl
+            name
+          }
         }
         commits(last: 100) {
           nodes {
@@ -44,9 +46,11 @@
                   url
                   body
                   author {
-                    login
-                    avatarUrl
-                    url
+                    ... on User {
+                      login
+                      avatarUrl
+                      name
+                    }
                   }
                 }
               }
