@@ -1,5 +1,6 @@
 package io.quarkus.backports.model;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -7,11 +8,15 @@ import java.util.Set;
 public class PullRequest {
     public int number;
 
+    public String body;
+
     public String url;
 
     public String title;
 
-    public String createdAt;
+    public Date createdAt;
+
+    public Date mergedAt;
 
     public Milestone milestone;
 
@@ -20,6 +25,8 @@ public class PullRequest {
     public List<Commit> commits;
 
     public Set<Issue> linkedIssues;
+
+    public Set<String> labels;
 
     public PullRequest(String number) {
         this.number = Integer.parseInt(number);

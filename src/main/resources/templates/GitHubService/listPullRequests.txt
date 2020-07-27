@@ -5,7 +5,14 @@
         number
         url
         title
+        body
+        mergedAt
         createdAt
+        labels (last: 100) {
+          nodes {
+            name
+          }
+        }
         milestone {
           title
         }
