@@ -4,8 +4,19 @@ import java.util.Objects;
 
 public class User {
     public String login;
-
     public String avatarUrl;
+    public String name;
+    public String url;
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "login='" + login + '\'' +
+                ", avatarUrl='" + avatarUrl + '\'' +
+                ", name='" + name + '\'' +
+                ", url='" + url + '\'' +
+                '}';
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -20,11 +31,4 @@ public class User {
         return Objects.hash(login);
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "login='" + login + '\'' +
-                ", avatarUrl='" + avatarUrl + '\'' +
-                '}';
-    }
 }

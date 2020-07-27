@@ -1,102 +1,59 @@
 {
   "data": {
     "search": {
-      "edges": [
+      "nodes": [
         {
-          "node": {
-            "number": 3,
-            "url": "https://github.com/gsmet/backports-test/pull/3",
-            "title": "PR3",
-            "createdAt": "2020-07-26T00:13:29Z",
-            "milestone": {
-              "title": "1.2.0.Final"
-            },
-            "author": {
-              "login": "gastaldi",
-              "avatarUrl": "https://avatars1.githubusercontent.com/u/54133?u=8832e77a7acb3be76f55f788a93dc5476289c53b&v=4"
-            },
-            "commits": {
-              "edges": [
-                {
-                  "node": {
-                    "url": "https://github.com/gsmet/backports-test/pull/3/commits/1ff4ca6c77090a6c78a1e15f04ea4d7f6d94a879",
-                    "commit": {
-                      "url": "https://github.com/gsmet/backports-test/commit/1ff4ca6c77090a6c78a1e15f04ea4d7f6d94a879",
-                      "message": "Update README.md",
-                      "abbreviatedOid": "1ff4ca6",
-                      "committedDate": "2020-07-26T00:13:23Z"
-                    }
-                  }
-                },
-                {
-                  "node": {
-                    "url": "https://github.com/gsmet/backports-test/pull/3/commits/bcdc487f91db3261bfa71a1dc402a951a5dbd559",
-                    "commit": {
-                      "url": "https://github.com/gsmet/backports-test/commit/bcdc487f91db3261bfa71a1dc402a951a5dbd559",
-                      "message": "Second commit",
-                      "abbreviatedOid": "bcdc487",
-                      "committedDate": "2020-07-26T00:14:07Z"
-                    }
+          "number": 2,
+          "url": "https://github.com/gastaldi/backport-repo/pull/2",
+          "title": "Update README.md",
+          "createdAt": "2020-07-24T17:44:11Z",
+          "body": "This is the pull-request description",
+          "mergedAt": "2020-07-24T17:44:20Z",
+          "labels": {
+            "nodes": [
+              {
+                "name": "triage/backport?"
+              }
+            ]
+          },
+          "milestone": {
+            "title": "One"
+          },
+          "author": {
+            "login": "gastaldi",
+            "avatarUrl": "https://avatars1.githubusercontent.com/u/54133?u=8832e77a7acb3be76f55f788a93dc5476289c53b&v=4",
+            "name": "George Gastaldi",
+            "url": "https://github.com/gastaldi"
+          },
+          "commits": {
+            "nodes": [
+              {
+                "url": "https://github.com/gastaldi/backport-repo/pull/2/commits/010d95abd65dfec445c7641af8c2cc5a74fb919a",
+                "commit": {
+                  "url": "https://github.com/gastaldi/backport-repo/commit/010d95abd65dfec445c7641af8c2cc5a74fb919a",
+                  "message": "Update README.md",
+                  "abbreviatedOid": "010d95a",
+                  "committedDate": "2020-07-24T17:44:02Z"
+                }
+              }
+            ]
+          },
+          "timelineItems": {
+            "nodes": [
+              {
+                "subject": {
+                  "number": 1,
+                  "title": "Blah",
+                  "url": "https://github.com/gastaldi/backport-repo/issues/1",
+                  "body": "Issue description",
+                  "author": {
+                    "login": "gastaldi",
+                    "avatarUrl": "https://avatars1.githubusercontent.com/u/54133?u=8832e77a7acb3be76f55f788a93dc5476289c53b&v=4",
+                    "url": "https://github.com/gastaldi"
                   }
                 }
-              ]
-            }
-          }
-        },
-        {
-          "node": {
-            "number": 2,
-            "url": "https://github.com/gsmet/backports-test/pull/2",
-            "title": "PR2",
-            "createdAt": "2020-07-25T14:16:21Z",
-            "milestone": null,
-            "author": {
-              "login": "gsmet",
-              "avatarUrl": "https://avatars3.githubusercontent.com/u/1279749?u=e462a6165ea17647aed446ca31fae604338ae18c&v=4"
-            },
-            "commits": {
-              "edges": [
-                {
-                  "node": {
-                    "url": "https://github.com/gsmet/backports-test/pull/2/commits/9d4f33f24ca180a74185040c7ec72a2e57340a45",
-                    "commit": {
-                      "url": "https://github.com/gsmet/backports-test/commit/9d4f33f24ca180a74185040c7ec72a2e57340a45",
-                      "message": "PR2",
-                      "abbreviatedOid": "9d4f33f",
-                      "committedDate": "2020-07-25T14:15:49Z"
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        },
-        {
-          "node": {
-            "number": 1,
-            "url": "https://github.com/gsmet/backports-test/pull/1",
-            "title": "PR1",
-            "createdAt": "2020-07-25T14:15:12Z",
-            "milestone": null,
-            "author": {
-              "login": "gsmet",
-              "avatarUrl": "https://avatars3.githubusercontent.com/u/1279749?u=e462a6165ea17647aed446ca31fae604338ae18c&v=4"
-            },
-            "commits": {
-              "edges": [
-                {
-                  "node": {
-                    "url": "https://github.com/gsmet/backports-test/pull/1/commits/e3f40ef92a8f9898084cebec99f72554ad55e293",
-                    "commit": {
-                      "url": "https://github.com/gsmet/backports-test/commit/e3f40ef92a8f9898084cebec99f72554ad55e293",
-                      "message": "PR1",
-                      "abbreviatedOid": "e3f40ef",
-                      "committedDate": "2020-07-25T14:14:45Z"
-                    }
-                  }
-                }
-              ]
-            }
+              }
+            ]
           }
         }
       ]

@@ -1,11 +1,16 @@
 package io.quarkus.backports;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -26,6 +31,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
 public class GitHubService {
+
+    private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
     @Inject
     @RestClient
@@ -76,6 +83,8 @@ public class GitHubService {
         if (response.getJsonArray("errors") != null) {
             throw new IOException(response.toString());
         }
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_PATTERN);
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         List<PullRequest> prList = new ArrayList<>();
         JsonArray pullRequests = response.getJsonObject("data")
                 .getJsonObject("search")
@@ -94,12 +103,25 @@ public class GitHubService {
             Collections.sort(commitList);
             PullRequest pullRequest = new PullRequest();
             pullRequest.number = pr.getInteger("number");
-            pullRequest.createdAt = pr.getString("createdAt");
+            try {
+                pullRequest.createdAt = sdf.parse(pr.getString("createdAt"));
+            } catch (ParseException ignore) {
+            }
+            try {
+                pullRequest.mergedAt = sdf.parse(pr.getString("mergedAt"));
+            } catch (ParseException ignore) {
+            }
             pullRequest.title = pr.getString("title");
             pullRequest.url = pr.getString("url");
+            pullRequest.body = pr.getString("body");
             pullRequest.author = pr.getJsonObject("author").mapTo(User.class);
             pullRequest.commits = commitList;
 
+            // Labels
+            pullRequest.labels = pr.getJsonObject("labels").getJsonArray("nodes").stream()
+                    .map(JsonObject.class::cast)
+                    .map(json -> json.getString("name"))
+                    .collect(Collectors.toSet());
             // Linked issues are available through CONNECTED and DISCONNECTED events
             // As these events can happen multiple times, we need to retain only events in an odd number
             // (even means the issue was connected and disconnected)

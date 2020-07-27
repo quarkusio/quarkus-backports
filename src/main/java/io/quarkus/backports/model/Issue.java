@@ -6,6 +6,9 @@ public class Issue implements Comparable<Issue> {
     public int number;
 
     public String title;
+    public String body;
+    public String url;
+    public User author;
 
     public Issue(String number) {
         this.number = Integer.parseInt(number);
@@ -29,15 +32,18 @@ public class Issue implements Comparable<Issue> {
     }
 
     @Override
+    public int compareTo(Issue o) {
+        return number - o.number;
+    }
+
+    @Override
     public String toString() {
         return "Issue{" +
                 "number=" + number +
                 ", title='" + title + '\'' +
+                ", body='" + body + '\'' +
+                ", url='" + url + '\'' +
+                ", author=" + author +
                 '}';
-    }
-
-    @Override
-    public int compareTo(Issue o) {
-        return number - o.number;
     }
 }
