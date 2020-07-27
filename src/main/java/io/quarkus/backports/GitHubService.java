@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +59,7 @@ public class GitHubService {
     }
 
     @CacheResult(cacheName = "github-cache")
-    public List<Milestone> getOpenMilestones() throws IOException {
+    public Collection<Milestone> getOpenMilestones() throws IOException {
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
                 .put("query", Templates.listMilestones(repository).render()));
         // Any errors?
@@ -76,7 +77,7 @@ public class GitHubService {
         return milestoneList;
     }
 
-    public List<PullRequest> getBackportCandidatesPullRequests() throws IOException {
+    public Collection<PullRequest> getBackportCandidatesPullRequests() throws IOException {
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
                 .put("query", Templates.listPullRequests(repository, backportLabel).render()));
         // Any errors?
@@ -85,7 +86,7 @@ public class GitHubService {
         }
         SimpleDateFormat sdf = new SimpleDateFormat(DATE_PATTERN);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        List<PullRequest> prList = new ArrayList<>();
+        Set<PullRequest> prList = new TreeSet<>();
         JsonArray pullRequests = response.getJsonObject("data")
                 .getJsonObject("search")
                 .getJsonArray("nodes");
