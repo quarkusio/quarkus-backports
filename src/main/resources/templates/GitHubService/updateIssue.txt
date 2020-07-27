@@ -1,0 +1,8 @@
+mutation BackportIssue($inputMilestone: UpdateIssueInput!, $inputLabel: RemoveLabelsFromLabelableInput!) {
+  updateIssue(input: $inputMilestone) {
+    clientMutationId
+  }
+  removeLabelsFromLabelable(input: $inputLabel) {
+    clientMutationId
+  }
+}

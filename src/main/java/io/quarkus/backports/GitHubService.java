@@ -177,6 +177,26 @@ public class GitHubService {
         if (response.getJsonArray("errors") != null) {
             throw new IOException(response.toString());
         }
+
+        // Update linked issues
+        String issueGraphQL = Templates.updateIssue().render();
+        for (Issue issue : pullRequest.linkedIssues) {
+            // Set Milestone and remove the backport tag
+            response = graphQLClient.graphql(token, new JsonObject()
+                    .put("query", issueGraphQL)
+                    .put("variables", new JsonObject()
+                            .put("inputMilestone", new JsonObject()
+                                    .put("id", issue.id)
+                                    .put("milestoneId", milestone.id))
+                            .put("inputLabel", new JsonObject()
+                                    .put("labelableId", issue.id)
+                                    .put("labelIds", backportLabelId)))
+            );
+            // Any errors?
+            if (response.getJsonArray("errors") != null) {
+                throw new IOException(response.toString());
+            }
+        }
     }
 
     @CheckedTemplate
@@ -200,6 +220,12 @@ public class GitHubService {
          * Update the Pull Request to the specified milestone and remove backport label
          */
         public static native TemplateInstance updatePullRequest();
+
+        /**
+         * Update the Pull Request to the specified milestone and remove backport label
+         */
+        public static native TemplateInstance updateIssue();
+
 
     }
 

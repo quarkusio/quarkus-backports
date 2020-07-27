@@ -3,6 +3,8 @@ package io.quarkus.backports.model;
 import java.util.Objects;
 
 public class Issue implements Comparable<Issue> {
+
+    public String id;
     public int number;
 
     public String title;
@@ -10,25 +12,17 @@ public class Issue implements Comparable<Issue> {
     public String url;
     public User author;
 
-    public Issue(String number) {
-        this.number = Integer.parseInt(number);
-    }
-
-    public Issue() {
-
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Issue)) return false;
         Issue issue = (Issue) o;
-        return number == issue.number;
+        return id.equals(issue.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(number);
+        return Objects.hash(id);
     }
 
     @Override

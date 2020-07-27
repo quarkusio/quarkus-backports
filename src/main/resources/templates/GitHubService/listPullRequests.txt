@@ -43,6 +43,7 @@
             ... on ConnectedEvent {
               subject {
                 ... on Issue {
+                  id
                   number
                   title
                   url
