@@ -4,7 +4,6 @@ import java.util.Objects;
 
 public class User {
     public String login;
-
     public String avatarUrl;
 
     @Override

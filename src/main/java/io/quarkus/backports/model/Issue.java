@@ -6,6 +6,8 @@ public class Issue implements Comparable<Issue> {
     public int number;
 
     public String title;
+    public String body;
+    public String url;
 
     public Issue(String number) {
         this.number = Integer.parseInt(number);

@@ -36,7 +36,7 @@
 								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.url}">{pr.title}</a>
 								<span style="float:right">
 									{#if pr.linkedIssues.size > 0}
-										<div class="ui icon mini button issues" data-variation="wide" data-position="bottom center" data-html="<div class='header'>Linked issues</div><div class='content'>{#for issue in pr.linkedIssues}&rsaquo; <a href='#todo-link'>#{issue.number}</a> {issue.title}<br />{/}</div>">
+										<div class="ui icon mini button issues" data-variation="wide" data-position="bottom center" data-html="<div class='header'>Linked issues</div><div class='content'>{#for issue in pr.linkedIssues}&rsaquo; <a href='{issue.url}' target='_blank' title='{issue.body}'>{issue.number}</a> {issue.title}<br />{/}</div>">
 											<i class="exclamation circle icon"></i>
 											<span class="floating ui red mini circular label">{pr.linkedIssues.size}</span>
 										</div>
