@@ -29,7 +29,7 @@ Finally, you mark the backport of this pull request as done:
 In your application directory, create a .env file containing your OAuth token:
 
 ```
-BACKPORT_TOKEN=<TOKEN>
+BACKPORTS_TOKEN=<TOKEN>
 ```
 
 Obviously, this token needs write permissions for the repository.
