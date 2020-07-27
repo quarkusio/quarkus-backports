@@ -19,6 +19,7 @@
         author {
           login
           avatarUrl
+          url
         }
         commits(last: 100) {
           nodes {
@@ -45,6 +46,7 @@
                   author {
                     login
                     avatarUrl
+                    url
                   }
                 }
               }
