@@ -1,7 +1,7 @@
 package io.quarkus.backports;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
 
 import javax.inject.Inject;
 import javax.ws.rs.BadRequestException;
@@ -26,9 +26,9 @@ public class BackportsResource {
 
     @CheckedTemplate
     public static class Templates {
-        public static native TemplateInstance index(List<Milestone> milestones);
+        public static native TemplateInstance index(Collection<Milestone> milestones);
 
-        public static native TemplateInstance backports(Milestone milestone, List<PullRequest> prs);
+        public static native TemplateInstance backports(Milestone milestone, Collection<PullRequest> prs);
     }
 
     @GET
@@ -42,8 +42,7 @@ public class BackportsResource {
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance backports(@PathParam("milestone") final Milestone milestone) throws IOException {
         validateMilestone(milestone);
-        List<PullRequest> pullRequests = gitHub.getBackportCandidatesPullRequests();
-        return Templates.backports(milestone, pullRequests);
+        return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
     }
 
     @GET

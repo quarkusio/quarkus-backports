@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public class PullRequest {
+public class PullRequest implements Comparable<PullRequest> {
     public int number;
 
     public String body;
@@ -64,5 +64,10 @@ public class PullRequest {
                 ", linkedIssues=" + linkedIssues +
                 ", labels=" + labels +
                 '}';
+    }
+
+    @Override
+    public int compareTo(PullRequest o) {
+        return mergedAt.compareTo(o.mergedAt);
     }
 }
