@@ -5,6 +5,7 @@ import java.util.Objects;
 public class User {
     public String login;
     public String avatarUrl;
+    public String url;
 
     @Override
     public boolean equals(Object o) {
@@ -24,6 +25,7 @@ public class User {
         return "User{" +
                 "login='" + login + '\'' +
                 ", avatarUrl='" + avatarUrl + '\'' +
+                ", url='" + url + '\'' +
                 '}';
     }
 }

@@ -53,12 +53,16 @@ public class PullRequest {
     public String toString() {
         return "PullRequest{" +
                 "number=" + number +
+                ", body='" + body + '\'' +
                 ", url='" + url + '\'' +
                 ", title='" + title + '\'' +
-                ", createdAt='" + createdAt + '\'' +
+                ", createdAt=" + createdAt +
+                ", mergedAt=" + mergedAt +
                 ", milestone=" + milestone +
                 ", author=" + author +
                 ", commits=" + commits +
+                ", linkedIssues=" + linkedIssues +
+                ", labels=" + labels +
                 '}';
     }
 }
