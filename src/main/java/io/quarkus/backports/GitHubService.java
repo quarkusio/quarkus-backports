@@ -144,10 +144,6 @@ public class GitHubService {
     public void markPullRequestAsBackported(PullRequest pullRequest, Milestone milestone) throws IOException {
     }
 
-    public Milestone createMilestone(String title, String description) throws IOException {
-        return null;
-    }
-
     @CheckedTemplate
     private static class Templates {
         /**
