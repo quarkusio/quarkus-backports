@@ -1,11 +1,19 @@
 package io.quarkus.backports.model;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.enterprise.inject.spi.CDI;
+
+import io.quarkus.backports.GitHubService;
+
 public class PullRequest implements Comparable<PullRequest> {
+
+    public String id;
+
     public int number;
 
     public String body;
@@ -27,14 +35,6 @@ public class PullRequest implements Comparable<PullRequest> {
     public Set<Issue> linkedIssues;
 
     public Set<String> labels;
-
-    public PullRequest(String number) {
-        this.number = Integer.parseInt(number);
-    }
-
-    public PullRequest() {
-    }
-
 
     @Override
     public boolean equals(Object o) {
@@ -70,4 +70,14 @@ public class PullRequest implements Comparable<PullRequest> {
     public int compareTo(PullRequest o) {
         return mergedAt.compareTo(o.mergedAt);
     }
+
+    public static PullRequest fromString(String numberStr) throws IOException {
+        int number = Integer.parseInt(numberStr);
+        final GitHubService service = CDI.current().select(GitHubService.class).get();
+        return service.getBackportCandidatesPullRequests().stream()
+                .filter(pr -> pr.number == number)
+                .findFirst()
+                .orElse(null);
+    }
+
 }

@@ -1,16 +1,16 @@
 package io.quarkus.backports.model;
 
+import java.io.IOException;
 import java.util.Objects;
 
+import javax.enterprise.inject.spi.CDI;
+
+import io.quarkus.backports.GitHubService;
+
 public class Milestone {
+    public String id;
+
     public String title;
-
-    public Milestone(String title) {
-        this.title = title;
-    }
-
-    public Milestone() {
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -30,5 +30,13 @@ public class Milestone {
         return "Milestone{" +
                 "title='" + title + '\'' +
                 '}';
+    }
+
+    public static Milestone fromString(String title) throws IOException {
+        final GitHubService service = CDI.current().select(GitHubService.class).get();
+        return service.getOpenMilestones().stream()
+                .filter(milestone -> milestone.title.equals(title))
+                .findFirst()
+                .orElse(null);
     }
 }

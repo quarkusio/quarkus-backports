@@ -4,6 +4,7 @@
       ... on Repository {
         milestones (last:100) {
           nodes {
+            id
             title
           }
         }

@@ -103,6 +103,7 @@ public class GitHubService {
             // Sort by commit date
             Collections.sort(commitList);
             PullRequest pullRequest = new PullRequest();
+            pullRequest.id = pr.getString("id");
             pullRequest.number = pr.getInteger("number");
             try {
                 pullRequest.createdAt = sdf.parse(pr.getString("createdAt"));
@@ -155,6 +156,7 @@ public class GitHubService {
          * Returns the (closed?) pull requests that match the specified label
          */
         public static native TemplateInstance listPullRequests(String repo, String label);
+
     }
 
 }

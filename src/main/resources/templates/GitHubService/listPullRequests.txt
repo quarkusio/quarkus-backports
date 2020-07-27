@@ -2,6 +2,7 @@
   search(query: "repo:{repo} is:pr label:{label}", type: ISSUE, last: 100) {
     nodes {
       ... on PullRequest {
+        id
         number
         url
         title
