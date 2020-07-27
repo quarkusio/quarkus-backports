@@ -1,0 +1,7 @@
+{
+  repository(owner: "{owner}", name: "{repo}") {
+    label(name: "{label}") {
+      id
+    }
+  }
+}
