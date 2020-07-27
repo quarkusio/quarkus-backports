@@ -34,7 +34,15 @@
 						<td>
 							<div>
 								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.url}">{pr.title}</a>
-								<span style="float:right"><span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span></span>
+								<span style="float:right">
+									{#if pr.linkedIssues.size > 0}
+										<div class="ui icon mini button issues" data-variation="wide" data-position="bottom center" data-html="<div class='header'>Linked issues</div><div class='content'>{#for issue in pr.linkedIssues}&rsaquo; <a href='#todo-link'>#{issue.number}</a> {issue.title}<br />{/}</div>">
+											<i class="exclamation circle icon"></i>
+											<span class="floating ui red mini circular label">{pr.linkedIssues.size}</span>
+										</div>
+									{/}
+									<span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span>
+								</span>
 							</div>
 							<div class="ui piled segment commits" id="commits-{pr.number}">
 								<div class="ui relaxed divided list">
@@ -53,7 +61,7 @@
 						<td class="center aligned">
 							<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.abbreviatedOid} {/}">
 								<i class="clipboard outline icon"></i>
-								<div class="floating ui blue mini label">{commits.size}</div>
+								<div class="floating ui blue mini circular label">{commits.size}</div>
 							</div>
 						</td>
 						<td class="center aligned">
@@ -90,6 +98,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 	<script type="text/javascript">
 		new ClipboardJS('.clipboard');
+		$('.button.issues').popup({ on: 'click' });
 	</script>
 </body>
 </html>
