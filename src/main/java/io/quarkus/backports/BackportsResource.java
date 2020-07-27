@@ -41,15 +41,15 @@ public class BackportsResource {
     @GET
     @Path("/backports/{milestone}/")
     @Produces(MediaType.TEXT_HTML)
-    public TemplateInstance backports(@NotNull @PathParam("milestone") final Milestone milestone) throws IOException {
+    public TemplateInstance backports(@NotNull(message = "Invalid Milestone")  @PathParam("milestone") final Milestone milestone) throws IOException {
         return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
     }
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/backports/{milestone}/backported/{pullRequest}/")
-    public String markAsBackported(@NotNull @PathParam("milestone") Milestone milestone,
-                                   @NotNull @PathParam("pullRequest") PullRequest pullRequest) throws IOException {
+    public String markAsBackported(@NotNull(message = "Invalid Milestone") @PathParam("milestone") Milestone milestone,
+                                   @NotNull(message = "Invalid Pull Request") @PathParam("pullRequest") PullRequest pullRequest) throws IOException {
         gitHub.markPullRequestAsBackported(pullRequest, milestone);
         return "SUCCESS";
     }

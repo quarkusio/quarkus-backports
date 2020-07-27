@@ -1,0 +1,10 @@
+{
+  "data": {
+    "updatePullRequest": {
+      "clientMutationId": null
+    },
+    "removeLabelsFromLabelable": {
+      "clientMutationId": null
+    }
+  }
+}

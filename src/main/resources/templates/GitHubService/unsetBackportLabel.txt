@@ -1,3 +1,0 @@
-mutation {
-  removeLabelsFromLabelable(input: {labelableId: "{pullRequest.id}", labelIds: "{label.id}"})
-}

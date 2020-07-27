@@ -162,7 +162,21 @@ public class GitHubService {
     }
 
     public void markPullRequestAsBackported(PullRequest pullRequest, Milestone milestone) throws IOException {
-
+        // Set Milestone and remove the backport tag
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query", Templates.updatePullRequest().render())
+                .put("variables", new JsonObject()
+                        .put("inputMilestone", new JsonObject()
+                                .put("pullRequestId", pullRequest.id)
+                                .put("milestoneId", milestone.id))
+                        .put("inputLabel", new JsonObject()
+                                .put("labelableId", pullRequest.id)
+                                .put("labelIds", backportLabelId)))
+        );
+        // Any errors?
+        if (response.getJsonArray("errors") != null) {
+            throw new IOException(response.toString());
+        }
     }
 
     @CheckedTemplate
@@ -178,19 +192,14 @@ public class GitHubService {
         public static native TemplateInstance listPullRequests(String repo, String label);
 
         /**
-         * Returns the (closed?) pull requests that match the specified label
-         */
-        public static native TemplateInstance updatePullRequest(PullRequest pullRequest, Milestone milestone);
-
-        /**
-         * Returns the (closed?) pull requests that match the specified label
+         * Returns the backport label ID
          */
         public static native TemplateInstance findBackportLabelId(String owner, String repo, String label);
 
         /**
-         * Returns the (closed?) pull requests that match the specified label
+         * Update the Pull Request to the specified milestone and remove backport label
          */
-        public static native TemplateInstance unsetBackportLabel(PullRequest pullRequest);
+        public static native TemplateInstance updatePullRequest();
 
     }
 
