@@ -1,0 +1,25 @@
+query FindIssues {
+  repository(owner: "{owner}", name: "{repo}") {
+    {#each issues}
+    _{it}: issue(number: {it}) {
+      ...issueFields
+    }
+    {/each}
+  }
+}
+
+fragment issueFields on Issue {
+  id
+  number
+  title
+  url
+  body
+  author {
+    ... on User {
+      login
+      avatarUrl
+      name
+      url
+    }
+  }
+}
