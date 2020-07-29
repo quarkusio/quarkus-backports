@@ -1,7 +1,8 @@
 {
-  search(query: "repo:{repo} is:pr label:{label}", type: ISSUE, last: 100) {
+  search(query: "repo:{repo} is:pr is:merged label:{label}", type: ISSUE, last: 100) {
     nodes {
       ... on PullRequest {
+        id
         number
         url
         title
@@ -42,6 +43,7 @@
             ... on ConnectedEvent {
               subject {
                 ... on Issue {
+                  id
                   number
                   title
                   url

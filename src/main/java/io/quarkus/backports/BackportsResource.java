@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 import javax.inject.Inject;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -40,25 +41,17 @@ public class BackportsResource {
     @GET
     @Path("/backports/{milestone}/")
     @Produces(MediaType.TEXT_HTML)
-    public TemplateInstance backports(@PathParam("milestone") final Milestone milestone) throws IOException {
-        validateMilestone(milestone);
+    public TemplateInstance backports(@NotNull(message = "Invalid Milestone")  @PathParam("milestone") final Milestone milestone) throws IOException {
         return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
     }
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/backports/{milestone}/backported/{pullRequest}/")
-    public String markAsBackported(@PathParam("milestone") Milestone milestone,
-                                   @PathParam("pullRequest") PullRequest pullRequest) throws IOException {
-        validateMilestone(milestone);
+    public String markAsBackported(@NotNull(message = "Invalid Milestone") @PathParam("milestone") Milestone milestone,
+                                   @NotNull(message = "Invalid Pull Request") @PathParam("pullRequest") PullRequest pullRequest) throws IOException {
         gitHub.markPullRequestAsBackported(pullRequest, milestone);
         return "SUCCESS";
-    }
-
-    private void validateMilestone(Milestone milestone) throws IOException {
-        if (!gitHub.getOpenMilestones().contains(milestone)) {
-            throw new BadRequestException("Milestone not found: " + milestone.title);
-        }
     }
 
     @TemplateExtension

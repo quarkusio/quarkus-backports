@@ -6,13 +6,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -45,6 +45,11 @@ public class GitHubService {
 
     private final String backportLabel;
 
+    /**
+     * Necessary for the unset operation
+     */
+    private String backportLabelId;
+
     @Inject
     public GitHubService(
             @ConfigProperty(name = "backports.token")
@@ -56,6 +61,20 @@ public class GitHubService {
         this.token = "Bearer " + token;
         this.repository = repositoryName;
         this.backportLabel = backportLabel;
+    }
+
+
+    @PostConstruct
+    void fetchBackportLabelID() {
+        String[] ownerAndRepo = repository.split("/");
+        final String query = Templates.findBackportLabelId(ownerAndRepo[0], ownerAndRepo[1], backportLabel).render();
+        final JsonObject response = graphQLClient.graphql(token, new JsonObject().put("query", query));
+        // Any errors?
+        if (response.getJsonArray("errors") != null) {
+            throw new RuntimeException(response.toString());
+        }
+        this.backportLabelId =
+                response.getJsonObject("data").getJsonObject("repository").getJsonObject("label").getString("id");
     }
 
     @CacheResult(cacheName = "github-cache")
@@ -103,6 +122,7 @@ public class GitHubService {
             // Sort by commit date
             Collections.sort(commitList);
             PullRequest pullRequest = new PullRequest();
+            pullRequest.id = pr.getString("id");
             pullRequest.number = pr.getInteger("number");
             try {
                 pullRequest.createdAt = sdf.parse(pr.getString("createdAt"));
@@ -142,10 +162,41 @@ public class GitHubService {
     }
 
     public void markPullRequestAsBackported(PullRequest pullRequest, Milestone milestone) throws IOException {
-    }
+        // Set Milestone and remove the backport tag
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query", Templates.updatePullRequest().render())
+                .put("variables", new JsonObject()
+                        .put("inputMilestone", new JsonObject()
+                                .put("pullRequestId", pullRequest.id)
+                                .put("milestoneId", milestone.id))
+                        .put("inputLabel", new JsonObject()
+                                .put("labelableId", pullRequest.id)
+                                .put("labelIds", backportLabelId)))
+        );
+        // Any errors?
+        if (response.getJsonArray("errors") != null) {
+            throw new IOException(response.toString());
+        }
 
-    public Milestone createMilestone(String title, String description) throws IOException {
-        return null;
+        // Update linked issues
+        String issueGraphQL = Templates.updateIssue().render();
+        for (Issue issue : pullRequest.linkedIssues) {
+            // Set Milestone and remove the backport tag
+            response = graphQLClient.graphql(token, new JsonObject()
+                    .put("query", issueGraphQL)
+                    .put("variables", new JsonObject()
+                            .put("inputMilestone", new JsonObject()
+                                    .put("id", issue.id)
+                                    .put("milestoneId", milestone.id))
+                            .put("inputLabel", new JsonObject()
+                                    .put("labelableId", issue.id)
+                                    .put("labelIds", backportLabelId)))
+            );
+            // Any errors?
+            if (response.getJsonArray("errors") != null) {
+                throw new IOException(response.toString());
+            }
+        }
     }
 
     @CheckedTemplate
@@ -159,6 +210,23 @@ public class GitHubService {
          * Returns the (closed?) pull requests that match the specified label
          */
         public static native TemplateInstance listPullRequests(String repo, String label);
+
+        /**
+         * Returns the backport label ID
+         */
+        public static native TemplateInstance findBackportLabelId(String owner, String repo, String label);
+
+        /**
+         * Update the Pull Request to the specified milestone and remove backport label
+         */
+        public static native TemplateInstance updatePullRequest();
+
+        /**
+         * Update the Pull Request to the specified milestone and remove backport label
+         */
+        public static native TemplateInstance updateIssue();
+
+
     }
 
 }

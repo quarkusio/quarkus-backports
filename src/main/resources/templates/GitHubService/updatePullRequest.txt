@@ -1,0 +1,8 @@
+mutation BackportPullRequest($inputMilestone: UpdatePullRequestInput!, $inputLabel: RemoveLabelsFromLabelableInput!) {
+  updatePullRequest(input: $inputMilestone) {
+    clientMutationId
+  }
+  removeLabelsFromLabelable(input: $inputLabel) {
+    clientMutationId
+  }
+}

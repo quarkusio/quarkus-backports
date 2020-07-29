@@ -1,0 +1,10 @@
+{
+  "data": {
+    "updateIssue": {
+      "clientMutationId": null
+    },
+    "removeLabelsFromLabelable": {
+      "clientMutationId": null
+    }
+  }
+}
