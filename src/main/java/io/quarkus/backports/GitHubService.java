@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
@@ -38,6 +39,9 @@ public class GitHubService {
     @Inject
     @RestClient
     GraphQLClient graphQLClient;
+
+    @Inject
+    IssueExtractor issueExtractor;
 
     private final String token;
 
@@ -155,6 +159,13 @@ public class GitHubService {
                     issues.remove(issue);
                 }
             }
+            // Extract missing issue numbers from the PR body
+            Set<Integer> issueNumbers = issueExtractor.extractIssueNumbers(pullRequest.body)
+                    .stream()
+                    .filter(issueNumber -> issues.stream().noneMatch(issue -> issue.number == issueNumber))
+                    .collect(Collectors.toSet());
+            // Add missing issues to the linked issues list
+            issues.addAll(findIssues(issueNumbers));
             pullRequest.linkedIssues = issues;
             prList.add(pullRequest);
         }
@@ -199,6 +210,36 @@ public class GitHubService {
         }
     }
 
+    private Collection<Issue> findIssues(Collection<Integer> issueNumbers) throws IOException {
+        if (issueNumbers.isEmpty()) {
+            return Collections.emptySet();
+        }
+        String[] ownerAndRepo = repository.split("/");
+        String query = Templates.findIssues(ownerAndRepo[0], ownerAndRepo[1], issueNumbers).render();
+        JsonObject response = graphQLClient.graphql(token, new JsonObject().put("query", query));
+        // Any errors?
+        JsonArray errors = response.getJsonArray("errors");
+        if (errors != null) {
+            // Checking if there are any errors different from NOT_FOUND
+            for (int k = 0; k < errors.size(); k++) {
+                JsonObject error = errors.getJsonObject(k);
+                if (!"NOT_FOUND".equals(error.getString("type"))) {
+                    throw new IOException(error.toString());
+                }
+            }
+        }
+        Set<Issue> issues = new HashSet<>();
+        JsonObject issuesJson = response.getJsonObject("data").getJsonObject("repository");
+        for (Integer issueNumber : issueNumbers) {
+            JsonObject jsonObject = issuesJson.getJsonObject("_" + issueNumber);
+            // If the issue cannot be found, null is returned
+            if (jsonObject != null && !jsonObject.isEmpty()) {
+                issues.add(jsonObject.mapTo(Issue.class));
+            }
+        }
+        return issues;
+    }
+
     @CheckedTemplate
     private static class Templates {
         /**
@@ -217,12 +258,18 @@ public class GitHubService {
         public static native TemplateInstance findBackportLabelId(String owner, String repo, String label);
 
         /**
+         * Returns the issues given their respective numbers
+         */
+        public static native TemplateInstance findIssues(String owner, String repo, Collection<Integer> issues);
+
+
+        /**
          * Update the Pull Request to the specified milestone and remove backport label
          */
         public static native TemplateInstance updatePullRequest();
 
         /**
-         * Update the Pull Request to the specified milestone and remove backport label
+         * Update the Issue to the specified milestone and remove backport label
          */
         public static native TemplateInstance updateIssue();
 

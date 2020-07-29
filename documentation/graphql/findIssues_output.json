@@ -1,0 +1,49 @@
+{
+  "data": {
+    "repository": {
+      "_12": {
+        "id": "MDU6SXNzdWU2Njc4MTYxNDY=",
+        "number": 12,
+        "title": "Issue 11",
+        "url": "https://github.com/gsmet/backports-test/issues/12",
+        "body": "",
+        "author": {
+          "login": "gsmet",
+          "avatarUrl": "https://avatars3.githubusercontent.com/u/1279749?u=e462a6165ea17647aed446ca31fae604338ae18c&v=4",
+          "name": "Guillaume Smet",
+          "url": "https://github.com/gsmet"
+        }
+      },
+      "_11": {
+        "id": "MDU6SXNzdWU2Njc4MTYwOTM=",
+        "number": 11,
+        "title": "Issue 10",
+        "url": "https://github.com/gsmet/backports-test/issues/11",
+        "body": "",
+        "author": {
+          "login": "gsmet",
+          "avatarUrl": "https://avatars3.githubusercontent.com/u/1279749?u=e462a6165ea17647aed446ca31fae604338ae18c&v=4",
+          "name": "Guillaume Smet",
+          "url": "https://github.com/gsmet"
+        }
+      },
+      "_100": null
+    }
+  },
+  "errors": [
+    {
+      "type": "NOT_FOUND",
+      "path": [
+        "repository",
+        "_100"
+      ],
+      "locations": [
+        {
+          "line": 10,
+          "column": 3
+        }
+      ],
+      "message": "Could not resolve to an Issue with the number of 100."
+    }
+  ]
+}
