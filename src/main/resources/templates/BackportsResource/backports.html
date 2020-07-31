@@ -41,7 +41,10 @@
 											<span class="floating ui red mini circular label">{pr.linkedIssues.size}</span>
 										</div>
 									{/}
-									<span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span>
+									<!-- bots don't have a proper login -->
+									{#if pr.author.login}
+										<span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span>
+									{/}
 								</span>
 							</div>
 							<div class="ui piled segment commits" id="commits-{pr.number}">
@@ -51,7 +54,7 @@
 										<div class="content">
 											<i class="map marker alternate icon"></i>
 											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
-											<a href="{commit.url}">{commit.message}</a>
+											<a href="{commit.url}">{commit.abbreviatedMessage}</a>
 										</div>
 									</div>
 									{/}
@@ -59,7 +62,7 @@
 							</div>
 						</td>
 						<td class="center aligned">
-							<div class="ui icon button clipboard" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.abbreviatedOid} {/}">
+							<div class="ui icon button clipboard-button" data-clipboard-text="git cherry-pick {#for commit in commits}{commit.abbreviatedOid} {/}">
 								<i class="clipboard outline icon"></i>
 								<div class="floating ui blue mini circular label">{commits.size}</div>
 							</div>
@@ -97,7 +100,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.4.1/semantic.min.js" integrity="sha512-dqw6X88iGgZlTsONxZK9ePmJEFrmHwpuMrsUChjAw1mRUhUITE5QU9pkcSox+ynfLhL15Sv2al5A0LVyDCmtUw==" crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.6/dist/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 	<script type="text/javascript">
-		new ClipboardJS('.clipboard');
+		new ClipboardJS('.clipboard-button');
 		$('.button.issues').popup({ on: 'click' });
 	</script>
 </body>
