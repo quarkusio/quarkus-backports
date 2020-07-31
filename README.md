@@ -61,3 +61,8 @@ The application can be packaged using `./mvnw package`.
 It produces the `quarkus-backports-1.0-SNAPSHOT-runner.jar` file in the `/target` directory.
 
 The application is now runnable using `java -jar target/quarkus-backports-1.0-SNAPSHOT-runner.jar`.
+
+## Testing the GraphQL
+
+If for any reason you need to change the GraphQL used to query the GitHub API, use https://developer.github.com/v4/explorer/ to test it.
+Don't forget to update the changed output in the `documentation/graphql` directory
