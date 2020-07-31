@@ -1,20 +1,18 @@
 {
   "data": {
-    "search": {
-      "nodes": [
-        {
-          "milestones": {
-            "nodes": [
-              {
-                "title": "One"
-              },
-              {
-                "title": "Two"
-              }
-            ]
+    "repository": {
+      "milestones": {
+        "nodes": [
+          {
+            "id": "MDk6TWlsZXN0b25lNTY5ODYzNg==",
+            "title": "1.1.0.Final"
+          },
+          {
+            "id": "MDk6TWlsZXN0b25lNTY5ODYzNw==",
+            "title": "1.2.0.Final"
           }
-        }
-      ]
+        ]
+      }
     }
   }
 }

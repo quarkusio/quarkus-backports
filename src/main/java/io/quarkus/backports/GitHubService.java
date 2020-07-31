@@ -83,16 +83,16 @@ public class GitHubService {
 
     @CacheResult(cacheName = "github-cache")
     public Collection<Milestone> getOpenMilestones() throws IOException {
+        String[] ownerAndRepo = repository.split("/");
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
-                .put("query", Templates.listMilestones(repository).render()));
+                .put("query", Templates.listMilestones(ownerAndRepo[0], ownerAndRepo[1]).render()));
         // Any errors?
         if (response.getJsonArray("errors") != null) {
             throw new IOException(response.toString());
         }
         List<Milestone> milestoneList = new ArrayList<>();
         JsonArray milestones = response.getJsonObject("data")
-                .getJsonObject("search")
-                .getJsonArray("nodes").getJsonObject(0)
+                .getJsonObject("repository")
                 .getJsonObject("milestones").getJsonArray("nodes");
         for (int i = 0; i < milestones.size(); i++) {
             milestoneList.add(milestones.getJsonObject(i).mapTo(Milestone.class));
@@ -245,7 +245,7 @@ public class GitHubService {
         /**
          * Returns all the milestones from the repository
          */
-        public static native TemplateInstance listMilestones(String repo);
+        public static native TemplateInstance listMilestones(String owner, String repo);
 
         /**
          * Returns the (closed?) pull requests that match the specified label

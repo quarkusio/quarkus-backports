@@ -1,13 +1,9 @@
-{
-  search(query: "repo:{repo}", type: REPOSITORY, last: 100) {
-    nodes {
-      ... on Repository {
-        milestones (states: [OPEN], last:100) {
-          nodes {
-            id
-            title
-          }
-        }
+query ListMilestones {
+  repository(owner: "{owner}", name: "{repo}") {
+    milestones(last: 100, states: OPEN) {
+      nodes {
+        id
+        title
       }
     }
   }
