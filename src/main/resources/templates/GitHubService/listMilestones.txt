@@ -1,6 +1,6 @@
 query ListMilestones {
   repository(owner: "{owner}", name: "{repo}") {
-    milestones(last: 100, states: OPEN) {
+    milestones(last: 100, states: OPEN, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
         id
         title
