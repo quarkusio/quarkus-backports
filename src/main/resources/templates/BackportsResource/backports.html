@@ -33,7 +33,7 @@
 					<tr>
 						<td>
 							<div>
-								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" href="{pr.url}">{pr.title}</a>
+								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" target="_blank" href="{pr.url}">{pr.title}</a>
 								<span style="float:right">
 									{#if pr.linkedIssues.size > 0}
 										<div class="ui icon mini button issues" data-variation="wide" data-position="bottom center" data-html="<div class='header'>Linked issues</div><div class='content'>{#for issue in pr.linkedIssues}&rsaquo; <a href='{issue.url}' target='_blank'>{issue.number}</a> {issue.title}<br />{/}</div>">
@@ -54,7 +54,7 @@
 										<div class="content">
 											<i class="map marker alternate icon"></i>
 											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
-											<a href="{commit.url}">{commit.abbreviatedMessage}</a>
+											<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
 										</div>
 									</div>
 									{/}
