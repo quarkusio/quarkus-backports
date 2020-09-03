@@ -17,6 +17,10 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import org.apache.maven.artifact.versioning.ComparableVersion;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+
 import io.quarkus.backports.graphql.GraphQLClient;
 import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Issue;
@@ -28,8 +32,6 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.api.CheckedTemplate;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
 public class GitHubService {
@@ -142,6 +144,12 @@ public class GitHubService {
             pullRequest.author = pr.getJsonObject("author").mapTo(User.class);
             pullRequest.commits = commitList;
 
+            // Milestone
+            JsonObject milestoneJson = pr.getJsonObject("milestone");
+            if (milestoneJson != null) {
+                pullRequest.milestone = milestoneJson.mapTo(Milestone.class);
+            }
+
             // Labels
             pullRequest.labels = pr.getJsonObject("labels").getJsonArray("nodes").stream()
                     .map(JsonObject.class::cast)
@@ -172,14 +180,24 @@ public class GitHubService {
         return prList;
     }
 
-    public void markPullRequestAsBackported(PullRequest pullRequest, Milestone milestone) throws IOException {
+    public void markPullRequestAsBackported(PullRequest pullRequest, Milestone newMilestone) throws IOException {
+        Milestone updatedMilestone;
+
+        if (pullRequest.milestone != null &&
+                new ComparableVersion(newMilestone.title).compareTo(new ComparableVersion(pullRequest.milestone.title)) > 0) {
+            // if the PR milestone is already defined and is < to the new milestone, we keep it
+            updatedMilestone = pullRequest.milestone;
+        } else {
+            updatedMilestone = newMilestone;
+        }
+
         // Set Milestone and remove the backport tag
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
                 .put("query", Templates.updatePullRequest().render())
                 .put("variables", new JsonObject()
                         .put("inputMilestone", new JsonObject()
                                 .put("pullRequestId", pullRequest.id)
-                                .put("milestoneId", milestone.id))
+                                .put("milestoneId", updatedMilestone.id))
                         .put("inputLabel", new JsonObject()
                                 .put("labelableId", pullRequest.id)
                                 .put("labelIds", backportLabelId)))
@@ -198,7 +216,7 @@ public class GitHubService {
                     .put("variables", new JsonObject()
                             .put("inputMilestone", new JsonObject()
                                     .put("id", issue.id)
-                                    .put("milestoneId", milestone.id))
+                                    .put("milestoneId", updatedMilestone.id))
                             .put("inputLabel", new JsonObject()
                                     .put("labelableId", issue.id)
                                     .put("labelIds", backportLabelId)))
