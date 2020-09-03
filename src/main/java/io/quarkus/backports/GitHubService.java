@@ -83,7 +83,7 @@ public class GitHubService {
                 response.getJsonObject("data").getJsonObject("repository").getJsonObject("label").getString("id");
     }
 
-    @CacheResult(cacheName = "github-cache")
+    @CacheResult(cacheName = CacheNames.MILESTONES_CACHE_NAME)
     public Collection<Milestone> getOpenMilestones() throws IOException {
         String[] ownerAndRepo = repository.split("/");
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
@@ -102,6 +102,7 @@ public class GitHubService {
         return milestoneList;
     }
 
+    @CacheResult(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
     public Collection<PullRequest> getBackportCandidatesPullRequests() throws IOException {
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
                 .put("query", Templates.listPullRequests(repository, backportLabel).render()));

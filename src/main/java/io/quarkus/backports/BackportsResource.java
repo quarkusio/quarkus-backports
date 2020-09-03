@@ -14,6 +14,8 @@ import javax.ws.rs.core.MediaType;
 import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Milestone;
 import io.quarkus.backports.model.PullRequest;
+import io.quarkus.cache.CacheInvalidate;
+import io.quarkus.cache.CacheResult;
 import io.quarkus.qute.TemplateExtension;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.api.CheckedTemplate;
@@ -41,6 +43,7 @@ public class BackportsResource {
     @GET
     @Path("/backports/{milestone}/")
     @Produces(MediaType.TEXT_HTML)
+    @CacheInvalidate(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
     public TemplateInstance backports(@NotNull(message = "Invalid Milestone")  @PathParam("milestone") final Milestone milestone) throws IOException {
         return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
     }
