@@ -28,6 +28,7 @@ public class Milestone {
     @Override
     public String toString() {
         return "Milestone{" +
+                "id='" + id + "', " +
                 "title='" + title + '\'' +
                 '}';
     }

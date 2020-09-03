@@ -15,6 +15,7 @@
           }
         }
         milestone {
+          id
           title
         }
         author {
