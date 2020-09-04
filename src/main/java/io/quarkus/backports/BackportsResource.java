@@ -15,7 +15,7 @@ import org.jboss.resteasy.annotations.jaxrs.PathParam;
 import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Milestone;
 import io.quarkus.backports.model.PullRequest;
-import io.quarkus.cache.CacheInvalidate;
+import io.quarkus.cache.CacheInvalidateAll;
 import io.quarkus.qute.TemplateExtension;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.api.CheckedTemplate;
@@ -35,7 +35,7 @@ public class BackportsResource {
 
     @GET
     @Produces(MediaType.TEXT_HTML)
-    @CacheInvalidate(cacheName = CacheNames.MILESTONES_CACHE_NAME)
+    @CacheInvalidateAll(cacheName = CacheNames.MILESTONES_CACHE_NAME)
     public TemplateInstance index() throws IOException {
         return Templates.index(gitHub.getOpenMilestones());
     }
@@ -43,7 +43,7 @@ public class BackportsResource {
     @GET
     @Path("/backports/{milestone}/")
     @Produces(MediaType.TEXT_HTML)
-    @CacheInvalidate(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
+    @CacheInvalidateAll(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
     public TemplateInstance backports(@NotNull(message = "Invalid Milestone")  @PathParam("milestone") final Milestone milestone) throws IOException {
         return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
     }
