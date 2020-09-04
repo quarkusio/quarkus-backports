@@ -5,21 +5,20 @@ import java.util.Collection;
 
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.jboss.resteasy.annotations.jaxrs.PathParam;
+
 import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Milestone;
 import io.quarkus.backports.model.PullRequest;
 import io.quarkus.cache.CacheInvalidate;
-import io.quarkus.cache.CacheResult;
 import io.quarkus.qute.TemplateExtension;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.qute.api.CheckedTemplate;
-import org.jboss.resteasy.annotations.jaxrs.PathParam;
 
 @Path("/")
 public class BackportsResource {
@@ -36,6 +35,7 @@ public class BackportsResource {
 
     @GET
     @Produces(MediaType.TEXT_HTML)
+    @CacheInvalidate(cacheName = CacheNames.MILESTONES_CACHE_NAME)
     public TemplateInstance index() throws IOException {
         return Templates.index(gitHub.getOpenMilestones());
     }
