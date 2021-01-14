@@ -3,16 +3,17 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<title>Quarkus - Backports</title>
+	<title>Quarkus - {#insert title /}</title>
+	<link rel="shortcut icon" type="image/png" href="/favicon.ico" >
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.7/semantic.min.css" integrity="sha512-g/MzOGVPy3OQ4ej1U+qe4D/xhLwUn5l5xL0Fa7gdC258ZWVJQGwsbIR47SWMpRxSPjD0tfu/xkilTy+Lhrl3xg==" crossorigin="anonymous" />
 	<link rel="stylesheet" href="/css/main.css" />
 </head>
 <body>
-	<div class="ui fixed inverted menu">
-		<a class="header item" href="https://github.com/quarkusio/quarkus/pulls">
+	<div class="ui fixed inverted menu main-menu">
+		<a class="header item" href="/">
 			<img class="logo" src="https://design.jboss.org/quarkus/logo/final/SVG/quarkus_icon_rgb_reverse.svg" alt="Quarkus logo" width="40" height="30">
+			{#insert title /}
 		</a>
-		{#insert additional-header-items/}
 	</div>
 	<div class="{#insert page-class/}">
 		{#insert body/}
