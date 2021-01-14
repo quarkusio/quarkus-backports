@@ -6,6 +6,9 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class Commit implements Comparable<Commit> {
+
+    public String oid;
+
     public String abbreviatedOid;
 
     public String message;
@@ -20,18 +23,18 @@ public class Commit implements Comparable<Commit> {
         if (this == o) return true;
         if (!(o instanceof Commit)) return false;
         Commit commit = (Commit) o;
-        return abbreviatedOid.equals(commit.abbreviatedOid);
+        return oid.equals(commit.oid);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(abbreviatedOid);
+        return Objects.hash(oid);
     }
 
     @Override
     public String toString() {
         return "Commit{" +
-                "abbreviatedOid='" + abbreviatedOid + '\'' +
+                "oid='" + oid + '\'' +
                 ", message='" + message + '\'' +
                 ", url='" + url + '\'' +
                 '}';
