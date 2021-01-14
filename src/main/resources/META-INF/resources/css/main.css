@@ -6,9 +6,9 @@
 	margin-top: 16em;
 }
 
-.main-content {
-	margin-top: 5em;
-	margin-bottom: 20em;
+.backports {
+	padding-top: 5em;
+	padding-bottom: 20em;
 }
 .pr-title {
 	font-weight: bold;
