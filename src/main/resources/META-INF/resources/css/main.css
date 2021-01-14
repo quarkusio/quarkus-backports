@@ -2,13 +2,27 @@
 	font-size: 20px;
 }
 
+.ui.menu img {
+	border-right: 1px solid darkgrey;
+	padding-right: 10px;
+	margin-right: 5px;
+}
+
+.ui.inverted.menu .item:before {
+	background-color: inherit;
+}
+
+.ui.menu .item {
+	padding: 1em 0.5em 1em 0.5em;
+}
+
 .milestone-choice {
 	margin-top: 16em;
 }
 
-.main-content {
-	margin-top: 5em;
-	margin-bottom: 20em;
+.backports {
+	padding-top: 5em;
+	padding-bottom: 20em;
 }
 .pr-title {
 	font-weight: bold;
