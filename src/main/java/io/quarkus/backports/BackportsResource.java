@@ -69,9 +69,5 @@ public class BackportsResource {
 
             return message.substring(0, newLine);
         }
-
-        static String abbreviatedSha(Commit commit) {
-            return commit.abbreviatedOid.substring(0, 7);
-        }
     }
 }
