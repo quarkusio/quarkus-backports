@@ -16,9 +16,9 @@ import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Milestone;
 import io.quarkus.backports.model.PullRequest;
 import io.quarkus.cache.CacheInvalidateAll;
-import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateExtension;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.qute.api.CheckedTemplate;
 
 @Path("/")
 public class BackportsResource {

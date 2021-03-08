@@ -28,8 +28,8 @@ import io.quarkus.backports.model.Milestone;
 import io.quarkus.backports.model.PullRequest;
 import io.quarkus.backports.model.User;
 import io.quarkus.cache.CacheResult;
-import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.qute.api.CheckedTemplate;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
