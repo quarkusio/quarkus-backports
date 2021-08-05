@@ -73,8 +73,14 @@
 							</script>
 						</td>
 					</tr>
-					{/}
-					{/}
+					{/set}
+					{#else}
+					<tr>
+						<td colspan="3">
+							Nothing to backport.
+						</td>
+					</tr>
+					{/for}
 				</tbody>
 			</table>
 		</div>
