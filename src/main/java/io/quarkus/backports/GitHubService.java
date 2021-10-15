@@ -79,8 +79,14 @@ public class GitHubService {
         if (response.getJsonArray("errors") != null) {
             throw new RuntimeException(response.toString());
         }
-        this.backportLabelId =
-                response.getJsonObject("data").getJsonObject("repository").getJsonObject("label").getString("id");
+
+        JsonObject backportLabelFromResponse = response.getJsonObject("data").getJsonObject("repository").getJsonObject("label");
+
+        if (backportLabelFromResponse == null) {
+            throw new IllegalStateException("Backport label " + backportLabel + " could not be found in repository " + repository);
+        }
+
+        this.backportLabelId = backportLabelFromResponse.getString("id");
     }
 
     @CacheResult(cacheName = CacheNames.MILESTONES_CACHE_NAME)
