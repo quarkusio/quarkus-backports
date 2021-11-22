@@ -18,7 +18,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-        <maven-artifact.version>3.8.3</maven-artifact.version>
+        <maven-artifact.version>3.8.4</maven-artifact.version>
     </properties>
     <dependencyManagement>
         <dependencies>
