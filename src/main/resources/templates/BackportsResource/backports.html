@@ -6,7 +6,8 @@
 			<table class="ui celled striped table">
 				<thead>
 					<tr>
-						<th class="fourteen wide">Pull Request</th>
+						<th class="one wide" style="width:10px; text-align:right">#</th>
+						<th class="thirteen wide">Pull Request</th>
 						<th class="one wide">Cherry&nbsp;Pick</th>
 						<th class="one wide">Done</th>
 					</tr>
@@ -15,6 +16,7 @@
 					{#for pr in prs}
 					{#set commits=pr.commits}
 					<tr>
+						<td style="text-align:right">{pr_count}</td>
 						<td>
 							<div>
 								<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" target="_blank" href="{pr.url}">{pr.title}</a>
