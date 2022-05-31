@@ -41,6 +41,11 @@
 											<i class="map marker alternate icon"></i>
 											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
 											<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
+											{#if commits.size > 1}
+											<div class="ui tiny icon button right floated clipboard-button" data-clipboard-text="git cherry-pick -x {commit.oid}">
+												<i class="clipboard outline icon"></i>
+											</div>
+											{/if}
 										</div>
 									</div>
 									{/}
