@@ -37,15 +37,19 @@
 								<div class="ui relaxed divided list">
 									{#for commit in commits}
 									<div class="item">
-										<div class="content">
-											<i class="map marker alternate icon"></i>
-											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
-											<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
+										<div class="right floated content">
 											{#if commits.size > 1}
-											<div class="ui tiny icon button right floated clipboard-button" data-clipboard-text="git cherry-pick -x {commit.oid}">
-												<i class="clipboard outline icon"></i>
-											</div>
+												<div class="ui compact icon button clipboard-button" data-clipboard-text="git cherry-pick -x {commit.oid}">
+													<i class="clipboard outline icon"></i>
+												</div>
 											{/if}
+										</div>
+										<div class="middle aligned content">
+											<div class="commit">
+												<i class="map marker alternate icon"></i>
+												<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
+												<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
+											</div>
 										</div>
 									</div>
 									{/}

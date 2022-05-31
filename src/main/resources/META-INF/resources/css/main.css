@@ -44,3 +44,9 @@
 .button.clipboard, .button.issues {
 	position: relative;
 }
+.ui.compact.icon.button, .ui.compact.icon.buttons .button {
+	padding: 0.4em 0.4em 0.4em;
+}
+.multi-commit {
+	padding-top: 0.2em;
+}
