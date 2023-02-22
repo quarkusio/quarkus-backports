@@ -3,7 +3,7 @@ package io.quarkus.backports.model;
 import java.io.IOException;
 import java.util.Objects;
 
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDI;
 
 import io.quarkus.backports.GitHubService;
 
