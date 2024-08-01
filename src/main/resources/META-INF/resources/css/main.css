@@ -28,6 +28,10 @@
 	margin-top: 16em;
 }
 
+.create-milestone {
+	text-align: right;
+}
+
 .backports {
 	padding-top: 5em;
 	padding-bottom: 20em;
