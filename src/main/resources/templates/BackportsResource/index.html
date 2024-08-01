@@ -18,6 +18,7 @@
 										{/}
 									</select>
 								</div>
+								<div class="create-milestone"><a href="https://github.com/{repository}/milestones/new">Create missing milestone</a></div>
 								<div class="ui submit green button" id="lets-backport">Let's backport!</div>
 							</div>
 						</div>
@@ -29,7 +30,7 @@
 	{#scripts}
 		<script type="text/javascript">
 			$('select.dropdown').dropdown();
-			
+
 			$('#lets-backport').click(function() {
 				window.location.href = '/backports/' + $('select#milestone').children("option:selected").val() + '/';
 				return false;

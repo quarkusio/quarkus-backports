@@ -3,6 +3,7 @@ package io.quarkus.backports;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.reactive.RestPath;
 
 import jakarta.inject.Inject;
@@ -27,9 +28,12 @@ public class BackportsResource {
     @Inject
     GitHubService gitHub;
 
+    @ConfigProperty(name = "backports.repository")
+    String repository;
+
     @CheckedTemplate
     public static class Templates {
-        public static native TemplateInstance index(Collection<Milestone> milestones);
+        public static native TemplateInstance index(String repository, Collection<Milestone> milestones);
 
         public static native TemplateInstance backports(Milestone milestone, Collection<PullRequest> prs);
     }
@@ -39,7 +43,7 @@ public class BackportsResource {
     @CacheInvalidateAll(cacheName = CacheNames.MILESTONES_CACHE_NAME)
     @Blocking
     public TemplateInstance index() throws IOException {
-        return Templates.index(gitHub.getOpenMilestones());
+        return Templates.index(repository, gitHub.getOpenMilestones());
     }
 
     @GET
