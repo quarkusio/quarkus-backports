@@ -26,6 +26,16 @@
             url
           }
         }
+        mergeCommit {
+          url
+          message
+          oid
+          abbreviatedOid
+          committedDate
+          parents {
+            totalCount
+          }
+        }
         commits(last: 100) {
           nodes {
             url
