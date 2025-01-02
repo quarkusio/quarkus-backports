@@ -19,7 +19,7 @@
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <surefire-plugin.version>3.5.2</surefire-plugin.version>
         <maven-artifact.version>3.9.9</maven-artifact.version>
-        <assertj.version>3.26.3</assertj.version>
+        <assertj.version>3.27.1</assertj.version>
     </properties>
     <dependencyManagement>
         <dependencies>
