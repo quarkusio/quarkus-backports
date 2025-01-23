@@ -45,6 +45,11 @@
 	margin-left: 4em;
 	margin-bottom: 0;
 }
+.ui.piled.segment.followups {
+	margin: 1em 0;
+	margin-left: 4em;
+	margin-bottom: 0;
+}
 .button.clipboard, .button.issues {
 	position: relative;
 }

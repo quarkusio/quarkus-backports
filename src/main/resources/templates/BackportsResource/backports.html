@@ -55,6 +55,18 @@
 									{/}
 								</div>
 							</div>
+							{#if pr.possibleFollowupPullRequests.size > 0}
+								<div class="ui piled segment followups">
+									<span>Possible follow-ups:</span><br/>
+									{#for followup in pr.possibleFollowupPullRequests}
+										<div class="commit">
+											<code class="ui tiny label"><a href="{followup.url}">{followup.id}</a></code>
+											<a href="{followup.url}" target="_blank">Pull request #{followup.id}</a>
+										</div>
+
+									{/}
+								</div>
+							{/}
 						</td>
 						<td class="center aligned">
 							<div class="ui icon button clipboard-button" data-clipboard-text="git cherry-pick -x {#for commit in commits}{commit.oid} {/}">
