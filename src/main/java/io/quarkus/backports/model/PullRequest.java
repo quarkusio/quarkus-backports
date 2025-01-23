@@ -36,6 +36,8 @@ public class PullRequest implements Comparable<PullRequest> {
 
     public Set<String> labels;
 
+    public Set<PossibleFollowupPullRequest> possibleFollowupPullRequests;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

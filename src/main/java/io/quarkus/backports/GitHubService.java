@@ -11,8 +11,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import io.quarkus.backports.model.PossibleFollowupPullRequest;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -51,6 +55,8 @@ public class GitHubService {
 
     private final String backportLabel;
 
+    private final Pattern PULL_REQUEST_URL_PATTERN;
+
     /**
      * Necessary for the unset operation
      */
@@ -67,6 +73,7 @@ public class GitHubService {
         this.token = "Bearer " + token;
         this.repository = repositoryName;
         this.backportLabel = backportLabel;
+        PULL_REQUEST_URL_PATTERN = Pattern.compile("https://github.com/" + repository + "/pull/\\d+");
     }
 
 
@@ -168,10 +175,13 @@ public class GitHubService {
             Set<Issue> issues = new TreeSet<>();
             final JsonArray timelineItems = pr.getJsonObject("timelineItems").getJsonArray("nodes");
             for (int j = 0; j < timelineItems.size(); j++) {
-                Issue issue = timelineItems.getJsonObject(j).getJsonObject("subject").mapTo(Issue.class);
-                // Add the issue to the Set. If it already exists, remove
-                if (!issues.add(issue)) {
-                    issues.remove(issue);
+                String typename = timelineItems.getJsonObject(j).getString("__typename");
+                if(typename.equals("ConnectedEvent") || typename.equals("DisconnectedEvent")) {
+                    Issue issue = timelineItems.getJsonObject(j).getJsonObject("subject").mapTo(Issue.class);
+                    // Add the issue to the Set. If it already exists, remove
+                    if (!issues.add(issue)) {
+                        issues.remove(issue);
+                    }
                 }
             }
             // Extract missing issue numbers from the PR body
@@ -183,6 +193,22 @@ public class GitHubService {
             issues.addAll(findIssues(issueNumbers));
             pullRequest.linkedIssues = issues;
             prList.add(pullRequest);
+
+            // find possible follow-up PRs by looking at PRs referenced in comments
+            Set<PossibleFollowupPullRequest> possibleFollowups = new HashSet<>();
+            for (int j = 0; j < timelineItems.size(); j++) {
+                String typename = timelineItems.getJsonObject(j).getString("__typename");
+                if(typename.equals("IssueComment")) {
+                    String commentBody = timelineItems.getJsonObject(j).getString("bodyHTML");
+                    PULL_REQUEST_URL_PATTERN.matcher(commentBody).results().forEach(url -> {
+                        PossibleFollowupPullRequest followup = new PossibleFollowupPullRequest();
+                        followup.url = url.group();
+                        followup.id = Integer.parseInt(url.group().substring(url.group().lastIndexOf('/') + 1));
+                        possibleFollowups.add(followup);
+                    });
+                }
+            }
+            pullRequest.possibleFollowupPullRequests = possibleFollowups;
         }
         return prList;
     }
