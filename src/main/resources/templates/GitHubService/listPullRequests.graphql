@@ -40,8 +40,9 @@
         }
         # Issue events linked to this pull-request
         # See https://github.community/t/get-all-issues-linked-to-a-pull-request/14653/6
-        timelineItems(itemTypes: [CONNECTED_EVENT, DISCONNECTED_EVENT], first: 100) {
+        timelineItems(itemTypes: [CONNECTED_EVENT, DISCONNECTED_EVENT, ISSUE_COMMENT], first: 100) {
           nodes {
+            __typename
             ... on ConnectedEvent {
               subject {
                 ... on Issue {
@@ -67,6 +68,10 @@
                   number
                 }
               }
+            }
+            # To find other pull requests that were mentioned in this one
+            ... on IssueComment {
+              bodyHTML
             }
           }
         }
