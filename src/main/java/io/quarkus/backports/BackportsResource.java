@@ -3,6 +3,7 @@ package io.quarkus.backports;
 import java.io.IOException;
 import java.util.Collection;
 
+import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.reactive.RestPath;
 
@@ -62,6 +63,10 @@ public class BackportsResource {
     public String markAsBackported(@NotNull(message = "Invalid Milestone") @RestPath Milestone milestone,
                                    @NotNull(message = "Invalid Pull Request") @RestPath PullRequest pullRequest) throws IOException {
         gitHub.markPullRequestAsBackported(pullRequest, milestone);
+        Log.info("Backported PR to " + milestone.title + ": " + pullRequest.url);
+        pullRequest.commits.forEach(commit -> {
+            Log.info("    Backported commit: URL=" +  commit.url + ", message=" + commit.message);
+        });
         return "SUCCESS";
     }
 
