@@ -1,0 +1,17 @@
+mutation CreateProjectV2(
+  $ownerId: ID!,
+  $repositoryId: ID!,
+  $title: String!
+) {
+  createProjectV2(input: {
+    ownerId: $ownerId
+    repositoryId: $repositoryId
+    title: $title
+  }) {
+    projectV2 {
+      id
+      title
+      number
+    }
+  }
+}

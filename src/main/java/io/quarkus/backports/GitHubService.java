@@ -6,13 +6,19 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.quarkus.backports.model.Repository;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -25,6 +31,10 @@ import io.quarkus.backports.graphql.GraphQLClient;
 import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Issue;
 import io.quarkus.backports.model.Milestone;
+import io.quarkus.backports.model.ProjectV2;
+import io.quarkus.backports.model.ProjectV2Field;
+import io.quarkus.backports.model.ProjectV2FieldOption;
+import io.quarkus.backports.model.ProjectV2Item;
 import io.quarkus.backports.model.PullRequest;
 import io.quarkus.backports.model.User;
 import io.quarkus.cache.CacheResult;
@@ -32,11 +42,19 @@ import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class GitHubService {
 
+    private static final Logger LOG = Logger.getLogger(GitHubService.class);
+
     private static final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    private static final String PROJECT_NAME = "Backports for %s";
+    private static final String OPTION_DESCRIPTION = "Backports for %s";
+    private static final String STATUS_FIELD = "Status";
+    private static final Pattern MICRO_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(.\\d+)*");
+    private static final String COLUMN_COLOR = "BLUE";
 
     @Inject
     @RestClient
@@ -47,7 +65,7 @@ public class GitHubService {
 
     private final String token;
 
-    private final String repository;
+    private final Repository repository;
 
     private final String backportLabel;
 
@@ -55,6 +73,26 @@ public class GitHubService {
      * Necessary for the unset operation
      */
     private String backportLabelId;
+
+    /**
+     * Cache for ownerId
+     */
+    private final Map<String, String> ownerIdCache = new ConcurrentHashMap<>();
+
+    /**
+     * Cache for repositoryId
+     */
+    private final Map<Repository, String> repositoryIdCache = new ConcurrentHashMap<>();
+
+    /**
+     * Cache for ProjectV2 objects by minor version
+     */
+    private final Map<String, ProjectV2> projectCache = new ConcurrentHashMap<>();
+
+    /**
+     * Cache for ProjectV2Field objects by minor version
+     */
+    private final Map<String, ProjectV2Field> statusFieldCache = new ConcurrentHashMap<>();
 
     @Inject
     public GitHubService(
@@ -65,15 +103,21 @@ public class GitHubService {
             @ConfigProperty(name = "backports.label")
                     String backportLabel) {
         this.token = "Bearer " + token;
-        this.repository = repositoryName;
+        this.repository = Repository.fromString(repositoryName);
         this.backportLabel = backportLabel;
     }
 
+    public void prepareRequirements(Milestone newMilestone) {
+        String ownerId = getOwnerId(repository.owner());
+        String repositoryId = getRepositoryId(repository);
+        String minorVersion = getMinorVersion(newMilestone.title);
+        ProjectV2 project = getOrCreateProjectV2(ownerId, repositoryId, repository, minorVersion);
+        addOptionToStatusFieldIfNecessary(project.id, newMilestone.title, String.format(OPTION_DESCRIPTION, newMilestone.title), COLUMN_COLOR);
+    }
 
     @PostConstruct
     void fetchBackportLabelID() {
-        String[] ownerAndRepo = repository.split("/");
-        final String query = Templates.findBackportLabelId(ownerAndRepo[0], ownerAndRepo[1], backportLabel).render();
+        final String query = Templates.findBackportLabelId(repository.owner(), repository.name(), backportLabel).render();
         final JsonObject response = graphQLClient.graphql(token, new JsonObject().put("query", query));
         // Any errors?
         if (response.getJsonArray("errors") != null) {
@@ -91,9 +135,8 @@ public class GitHubService {
 
     @CacheResult(cacheName = CacheNames.MILESTONES_CACHE_NAME)
     public Collection<Milestone> getOpenMilestones() throws IOException {
-        String[] ownerAndRepo = repository.split("/");
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
-                .put("query", Templates.listMilestones(ownerAndRepo[0], ownerAndRepo[1]).render()));
+                .put("query", Templates.listMilestones(repository.owner(), repository.name()).render()));
         // Any errors?
         if (response.getJsonArray("errors") != null) {
             throw new IOException(response.toString());
@@ -111,7 +154,7 @@ public class GitHubService {
     @CacheResult(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
     public Collection<PullRequest> getBackportCandidatesPullRequests() throws IOException {
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
-                .put("query", Templates.listPullRequests(repository, backportLabel).render()));
+                .put("query", Templates.listPullRequests(repository.fullName(), backportLabel).render()));
         // Any errors?
         if (response.getJsonArray("errors") != null) {
             throw new IOException(response.toString());
@@ -233,14 +276,24 @@ public class GitHubService {
                 throw new IOException(response.toString());
             }
         }
+
+        // Add to ProjectV2 based on milestone version
+        try {
+            addIssueOrPullRequestToProjectV2(pullRequest.id, getMinorVersion(newMilestone.title), newMilestone.title);
+
+            for (Issue issue : pullRequest.linkedIssues) {
+                addIssueOrPullRequestToProjectV2(issue.id, getMinorVersion(newMilestone.title), newMilestone.title);
+            }
+        } catch (IOException e) {
+            LOG.errorf(e,"Failed to add pull request: %s to project column", pullRequest.number);
+        }
     }
 
     private Collection<Issue> findIssues(Collection<Integer> issueNumbers) throws IOException {
         if (issueNumbers.isEmpty()) {
             return Collections.emptySet();
         }
-        String[] ownerAndRepo = repository.split("/");
-        String query = Templates.findIssues(ownerAndRepo[0], ownerAndRepo[1], issueNumbers).render();
+        String query = Templates.findIssues(repository.owner(), repository.name(), issueNumbers).render();
         JsonObject response = graphQLClient.graphql(token, new JsonObject().put("query", query));
         // Any errors?
         JsonArray errors = response.getJsonArray("errors");
@@ -263,6 +316,299 @@ public class GitHubService {
             }
         }
         return issues;
+    }
+
+    public void addIssueOrPullRequestToProjectV2(String itemId, String minorVersion, String microVersion) throws IOException {
+        String repositoryId = getRepositoryId(repository);
+        String ownerId = getOwnerId(repository.owner());
+
+        ProjectV2 project = getOrCreateProjectV2(ownerId, repositoryId, repository, minorVersion);
+        ProjectV2Field statusField = getStatusField(project.id);
+        ProjectV2Item item = addItemToProjectV2(project.id, itemId);
+        Optional<ProjectV2FieldOption> microVersionOption = statusField.options.stream().filter(o -> microVersion.equals(o.name)).findFirst();
+
+        if (microVersionOption.isEmpty()) {
+            throw new IllegalStateException("Unable to find an option for micro version: " + microVersion);
+        }
+
+        updateProjectV2ItemFieldValue(project.id, item.id, statusField.id, microVersionOption.get().id);
+    }
+
+    private String getOwnerId(String owner) {
+        return ownerIdCache.computeIfAbsent(owner, o -> {
+            JsonObject variables = new JsonObject();
+            variables.put("owner", owner);
+
+            JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                    .put("query", Templates.getOwnerInfo().render()).put("variables", variables));
+
+            JsonObject data = response.getJsonObject("data");
+            JsonObject org = data.getJsonObject("organization");
+            if (org != null) {
+                return org.getString("id");
+            }
+
+            JsonObject user = data.getJsonObject("user");
+            if (user != null) {
+                return user.getString("id");
+            }
+
+            throw new IllegalStateException(String.format("Unable to get the owner information for owner: %s", owner));
+        });
+    }
+
+    private String getRepositoryId(Repository repository) {
+        return repositoryIdCache.computeIfAbsent(repository, r -> {
+            JsonObject variables = new JsonObject();
+            variables.put("owner", repository.owner());
+            variables.put("name", repository.name());
+
+            JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                    .put("query", Templates.getRepositoryInfo().render()).put("variables", variables));
+
+            JsonObject data = response.getJsonObject("data");
+            JsonObject repositoryNode = data.getJsonObject("repository");
+            if (repositoryNode != null) {
+                return repositoryNode.getString("id");
+            }
+
+            throw new IllegalStateException(String.format("Unable to get the repository information for repository: %s", repository));
+        });
+    }
+
+    private ProjectV2 getOrCreateProjectV2(String ownerId, String repositoryId, Repository repository, String minorVersion) {
+        return projectCache.computeIfAbsent(minorVersion, mv -> {
+            String projectTitle = String.format(PROJECT_NAME, mv);
+
+            JsonObject variables = new JsonObject();
+            variables.put("owner", repository.owner());
+            variables.put("repository", repository.name());
+
+            JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                    .put("query", Templates.getProjectsV2().render()).put("variables", variables));
+
+            if (response.getJsonArray("errors") != null) {
+                throw new IllegalStateException(String.format("Unable to get projects for repository: %s: %s", repository.fullName(), response.getJsonArray("errors").toString()));
+            }
+
+            JsonObject data = response.getJsonObject("data");
+            JsonArray projects = null;
+
+            JsonObject repositoryNode = data.getJsonObject("repository");
+            if (repositoryNode != null) {
+                projects = repositoryNode.getJsonObject("projectsV2").getJsonArray("nodes");
+            }
+
+            ProjectV2 project = null;
+            if (projects != null && !projects.isEmpty()) {
+                for (int i = 0; i < projects.size(); i++) {
+                    ProjectV2 projectCandidate = projects.getJsonObject(i).mapTo(ProjectV2.class);
+                    if (projectTitle.equals(projectCandidate.title)) {
+                        project = projectCandidate;
+                        break;
+                    }
+                }
+            }
+            if (project == null) {
+                project = createProjectV2(ownerId, repositoryId, projectTitle);
+            }
+
+            return project;
+        });
+    }
+
+    private ProjectV2 createProjectV2(String ownerId, String repositoryId, String title) {
+        JsonObject variables = new JsonObject();
+        variables.put("ownerId", ownerId);
+        variables.put("repositoryId", repositoryId);
+        variables.put("title", title);
+
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+            .put("query", Templates.createProjectV2().render()).put("variables", variables));
+        
+        if (response.getJsonArray("errors") != null) {
+            throw new IllegalStateException(String.format("Unable to create project for owner: %s, title: %s: %s", repository.owner(), title, response.getJsonArray("errors").toString()));
+        }
+
+        return response.getJsonObject("data")
+            .getJsonObject("createProjectV2")
+            .getJsonObject("projectV2")
+            .mapTo(ProjectV2.class);
+    }
+
+    private ProjectV2Field getStatusField(String projectId) {
+        return statusFieldCache.computeIfAbsent(projectId, pi -> getProjectV2FieldOptions(projectId, STATUS_FIELD));
+    }
+
+    private ProjectV2Item addItemToProjectV2(String projectId, String contentId) {
+        JsonObject variables = new JsonObject()
+            .put("projectId", projectId)
+            .put("contentId", contentId);
+        
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+            .put("query", Templates.addItemToProjectV2().render())
+            .put("variables", variables));
+        
+        if (response.getJsonArray("errors") != null) {
+            throw new IllegalStateException(String.format("Unable to add item: %s to project: %s. Errors: %s", "TODO item", "TODO project", response.toString()));
+        }
+        
+        return response.getJsonObject("data")
+            .getJsonObject("addProjectV2ItemById")
+            .getJsonObject("item")
+            .mapTo(ProjectV2Item.class);
+    }
+
+    private void updateProjectV2ItemFieldValue(String projectId, String itemId, String fieldId, String optionId) {
+        JsonObject variables = new JsonObject()
+                .put("projectId", projectId)
+                .put("itemId", itemId)
+                .put("fieldId", fieldId)
+                .put("optionId", optionId);
+
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query", Templates.updateProjectV2ItemFieldValue().render())
+                .put("variables", variables));
+
+        if (response.getJsonArray("errors") != null) {
+            throw new IllegalStateException(String.format("Unable to update item field value: %s", response.toString()));
+        }
+    }
+
+    /**
+     * Adds a new option to a ProjectV2 single select field.
+     * This method retrieves all current options, adds the new option, and updates the field.
+     * 
+     * @param projectId The ID of the ProjectV2
+     * @param microVersion The name of the new option to add
+     * @param newOptionColor The color of the new option (optional, can be null)
+     * @return The updated ProjectV2Field with the new option
+     */
+    public ProjectV2Field addOptionToStatusFieldIfNecessary(String projectId, String microVersion, String newOptionDescription, String newOptionColor) {
+        // Get current field options
+        ProjectV2Field statusField = getProjectV2FieldOptions(projectId, STATUS_FIELD);
+        
+        // Check if option already exists
+        boolean optionExists = statusField.options.stream()
+                .anyMatch(option -> microVersion.equals(option.name));
+        
+        if (optionExists) {
+            LOG.debugf("Option '%s' already exists in field '%s'", microVersion, statusField.name);
+            return statusField;
+        }
+        
+        // Prepare options list with the new option
+        List<JsonObject> options = new ArrayList<>();
+        
+        // Add existing options
+        for (ProjectV2FieldOption option : statusField.options) {
+            // drop all the standard options
+            if (!MICRO_VERSION_PATTERN.matcher(option.name).matches()) {
+                continue;
+            }
+
+            JsonObject optionJson = new JsonObject()
+                    .put("name", option.name);
+            optionJson.put("description", option.description);
+            if (option.color != null && !option.color.trim().isEmpty()) {
+                optionJson.put("color", option.color);
+            }
+            options.add(optionJson);
+        }
+        
+        // Add new option
+        JsonObject newOptionJson = new JsonObject();
+        newOptionJson.put("name", microVersion);
+        newOptionJson.put("description", newOptionDescription);
+        if (newOptionColor != null && !newOptionColor.trim().isEmpty()) {
+            newOptionJson.put("color", newOptionColor);
+        }
+        options.add(newOptionJson);
+
+        options.sort(Comparator.comparing(o -> new ComparableVersion(o.getString("name"))));
+
+        // Update the field with new options
+        ProjectV2Field projectV2Field = updateProjectV2FieldOptions(projectId, statusField.id, statusField.name, new JsonArray(options));
+        // and make sure the cache is updated
+        statusFieldCache.put(projectId, projectV2Field);
+
+        return projectV2Field;
+    }
+
+    /**
+     * Retrieves the options for a specific ProjectV2 single select field.
+     * 
+     * @param projectId The ID of the ProjectV2
+     * @param fieldName The ID of the field
+     * @return The ProjectV2Field with its options
+     */
+    private ProjectV2Field getProjectV2FieldOptions(String projectId, String fieldName) {
+        JsonObject variables = new JsonObject()
+                .put("projectId", projectId)
+                .put("fieldName", fieldName);
+        
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query", Templates.getProjectV2FieldOptions().render())
+                .put("variables", variables));
+        
+        if (response.getJsonArray("errors") != null) {
+            throw new IllegalStateException(String.format("Unable to get field options: %s", response.toString()));
+        }
+        
+        JsonObject fieldData = response.getJsonObject("data")
+                .getJsonObject("node")
+                .getJsonObject("field");
+        
+        if (fieldData == null) {
+            throw new IllegalArgumentException(String.format("Field %s not found in project %s", fieldName, projectId));
+        }
+
+        ProjectV2Field statusField = fieldData.mapTo(ProjectV2Field.class);
+
+        if (!"SINGLE_SELECT".equals(statusField.dataType)) {
+            throw new IllegalArgumentException("Field is not a single select field");
+        }
+
+        return statusField;
+    }
+
+    /**
+     * Updates a ProjectV2 field with new options.
+     * 
+     * @param projectId The ID of the ProjectV2
+     * @param fieldId The ID of the field to update
+     * @param fieldName The name of the field
+     * @param options The new options for the field
+     * @return The updated ProjectV2Field
+     */
+    private ProjectV2Field updateProjectV2FieldOptions(String projectId, String fieldId, String fieldName, JsonArray options) {
+        JsonObject variables = new JsonObject()
+                .put("fieldId", fieldId)
+                .put("name", fieldName)
+                .put("options", options);
+        
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query", Templates.updateProjectV2Field().render())
+                .put("variables", variables));
+        
+        if (response.getJsonArray("errors") != null) {
+            throw new IllegalStateException(String.format("Unable to update field options: %s", response.toString()));
+        }
+        
+        JsonObject fieldData = response.getJsonObject("data")
+                .getJsonObject("updateProjectV2Field")
+                .getJsonObject("projectV2Field");
+        
+        return fieldData.mapTo(ProjectV2Field.class);
+    }
+
+    public static String getMinorVersion(String version) {
+        if (!MICRO_VERSION_PATTERN.matcher(version).matches()) {
+            throw new IllegalArgumentException("Invalid version " + version + ". Versions should be [0-9]+.[0-9]+.[0-9]+(.[0-9]+)?");
+        }
+
+        String[] versionParts = version.split("\\.");
+        return versionParts[0] + "." + versionParts[1];
     }
 
     @CheckedTemplate
@@ -298,6 +644,45 @@ public class GitHubService {
          */
         public static native TemplateInstance updateIssue();
 
+        /**
+         * Find ProjectV2
+         */
+        public static native TemplateInstance getProjectsV2();
+
+        /**
+         * Create a new ProjectV2
+         */
+        public static native TemplateInstance createProjectV2();
+
+        /**
+         * Add item to project
+         */
+        public static native TemplateInstance addItemToProjectV2();
+
+        /**
+         * Update project item field value
+         */
+        public static native TemplateInstance updateProjectV2ItemFieldValue();
+
+        /**
+         * Get owner information
+         */
+        public static native TemplateInstance getOwnerInfo();
+
+        /**
+         * Get owner information
+         */
+        public static native TemplateInstance getRepositoryInfo();
+
+        /**
+         * Get ProjectV2 field options
+         */
+        public static native TemplateInstance getProjectV2FieldOptions();
+
+        /**
+         * Update ProjectV2 field with new options
+         */
+        public static native TemplateInstance updateProjectV2Field();
 
     }
 

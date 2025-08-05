@@ -52,6 +52,8 @@ public class BackportsResource {
     @CacheInvalidateAll(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
     @Blocking
     public TemplateInstance backports(@NotNull(message = "Invalid Milestone")  @RestPath final Milestone milestone) throws IOException {
+        gitHub.prepareRequirements(milestone);
+
         return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
     }
 

@@ -1,0 +1,10 @@
+query GetOwnerInfo($owner: String!) {
+  organization(login: $owner) {
+    id
+    login
+  }
+  user(login: $owner) {
+    id
+    login
+  }
+}
