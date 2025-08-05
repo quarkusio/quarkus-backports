@@ -1,0 +1,20 @@
+query GetProjectV2FieldOptions($projectId: ID!, $fieldName: String!) {
+  node(id: $projectId) {
+    ... on ProjectV2 {
+      id
+      field(name: $fieldName) {
+        ... on ProjectV2SingleSelectField {
+          id
+          name
+          dataType
+          options {
+            id
+            name
+            color
+            description
+          }
+        }
+      }
+    }
+  }
+}
