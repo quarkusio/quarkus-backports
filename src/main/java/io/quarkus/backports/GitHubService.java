@@ -146,10 +146,19 @@ public class GitHubService {
                 .getJsonObject("milestones").getJsonArray("nodes");
         for (int i = 0; i < milestones.size(); i++) {
             JsonObject milestoneJsonObject = milestones.getJsonObject(i);
+            String version = milestoneJsonObject.getString("title");
+
+            if (!MICRO_VERSION_PATTERN.matcher(version).matches()) {
+                continue;
+            }
+
             milestoneList.add(new Milestone(milestoneJsonObject.getString("id"),
-                    milestoneJsonObject.getString("title"),
-                    getMinorVersion(milestoneJsonObject.getString("title"))));
+                    version,
+                    getMinorVersion(version)));
         }
+
+        milestoneList.sort(Comparator.comparing(m -> new ComparableVersion(m.title()), Comparator.reverseOrder()));
+
         return milestoneList;
     }
 
