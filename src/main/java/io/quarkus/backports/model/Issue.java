@@ -14,8 +14,10 @@ public class Issue implements Comparable<Issue> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Issue)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Issue))
+            return false;
         Issue issue = (Issue) o;
         return id.equals(issue.id);
     }

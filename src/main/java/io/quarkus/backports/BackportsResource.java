@@ -3,30 +3,29 @@ package io.quarkus.backports;
 import java.io.IOException;
 import java.util.Collection;
 
-import io.quarkus.logging.Log;
-import io.quarkus.backports.model.ProjectV2;
-import io.quarkus.backports.model.ProjectV2Field;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.resteasy.reactive.RestPath;
-
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.resteasy.reactive.RestPath;
 
 import io.quarkus.backports.model.Commit;
 import io.quarkus.backports.model.Milestone;
+import io.quarkus.backports.model.ProjectV2;
+import io.quarkus.backports.model.ProjectV2Field;
 import io.quarkus.backports.model.PullRequest;
 import io.quarkus.cache.CacheInvalidateAll;
+import io.quarkus.logging.Log;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateExtension;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.common.annotation.Blocking;
-import org.jboss.resteasy.reactive.RestQuery;
 
 @Path("/")
 public class BackportsResource {
@@ -43,7 +42,8 @@ public class BackportsResource {
 
         public static native TemplateInstance backports(Milestone milestone, Collection<PullRequest> prs);
 
-        public static native TemplateInstance createStatusOptionForMilestone(ProjectV2 projectV2, Milestone milestone, String statusFieldSettingsUrl, String refreshStatusFieldUrl);
+        public static native TemplateInstance createStatusOptionForMilestone(ProjectV2 projectV2, Milestone milestone,
+                String statusFieldSettingsUrl, String refreshStatusFieldUrl);
     }
 
     @GET
@@ -59,14 +59,18 @@ public class BackportsResource {
     @Produces(MediaType.TEXT_HTML)
     @CacheInvalidateAll(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
     @Blocking
-    public TemplateInstance backports(@NotNull(message = "Invalid Milestone")  @RestPath final Milestone milestone) throws IOException {
+    public TemplateInstance backports(@NotNull(message = "Invalid Milestone") @RestPath final Milestone milestone)
+            throws IOException {
         ProjectV2 projectV2 = gitHub.prepareRequirements(milestone);
 
         if (gitHub.isMilestonePresentInStatusField(projectV2.id, milestone)) {
             return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
         } else {
-            return Templates.createStatusOptionForMilestone(projectV2, milestone, gitHub.getStatusFieldSettingsUrl(projectV2.number),
-                    UriBuilder.fromPath("/backports/{milestone}/refresh-status-field/{projectId}").resolveTemplate("milestone", milestone.title()).resolveTemplate("projectId", projectV2.id).build().toString());
+            return Templates.createStatusOptionForMilestone(projectV2, milestone,
+                    gitHub.getStatusFieldSettingsUrl(projectV2.number),
+                    UriBuilder.fromPath("/backports/{milestone}/refresh-status-field/{projectId}")
+                            .resolveTemplate("milestone", milestone.title()).resolveTemplate("projectId", projectV2.id).build()
+                            .toString());
         }
     }
 
@@ -74,14 +78,17 @@ public class BackportsResource {
     @Path("/backports/{milestone}/refresh-status-field/{projectId}")
     @Produces(MediaType.TEXT_HTML)
     @Blocking
-    public Response backportsRefreshStatusField(@NotNull(message = "Invalid Milestone")  @RestPath final Milestone milestone,
-             @RestPath final String projectId) throws IOException {
+    public Response backportsRefreshStatusField(@NotNull(message = "Invalid Milestone") @RestPath final Milestone milestone,
+            @RestPath final String projectId) throws IOException {
         ProjectV2Field statusField = gitHub.refreshStatusField(projectId);
         if (!gitHub.isMilestonePresentInStatusField(projectId, milestone)) {
             throw new IllegalStateException("Make sure you create the appropriate column in the project board and refresh");
         }
 
-        return Response.temporaryRedirect(UriBuilder.fromPath("/backports/{milestone}/").resolveTemplate("milestone", milestone.title()).build()).build();
+        return Response
+                .temporaryRedirect(
+                        UriBuilder.fromPath("/backports/{milestone}/").resolveTemplate("milestone", milestone.title()).build())
+                .build();
     }
 
     @GET
@@ -89,11 +96,11 @@ public class BackportsResource {
     @Path("/backports/{milestone}/backported/{pullRequest}/")
     @Blocking
     public String markAsBackported(@NotNull(message = "Invalid Milestone") @RestPath Milestone milestone,
-                                   @NotNull(message = "Invalid Pull Request") @RestPath PullRequest pullRequest) throws IOException {
+            @NotNull(message = "Invalid Pull Request") @RestPath PullRequest pullRequest) throws IOException {
         gitHub.markPullRequestAsBackported(pullRequest, milestone);
         Log.info("Backported PR to " + milestone.title() + ": " + pullRequest.url);
         pullRequest.commits.forEach(commit -> {
-            Log.info("    Backported commit: URL=" +  commit.url + ", message=" + commit.message);
+            Log.info("    Backported commit: URL=" + commit.url + ", message=" + commit.message);
         });
         return "SUCCESS";
     }

@@ -11,8 +11,10 @@ public record Milestone(String id, String title, String minorVersion) {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Milestone milestone)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Milestone milestone))
+            return false;
         return Objects.equals(title, milestone.title);
     }
 
