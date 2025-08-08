@@ -53,8 +53,9 @@ public class GitHubService {
     private static final String PROJECT_NAME = "Backports for %s";
     private static final String OPTION_DESCRIPTION = "Backports for %s";
     private static final String STATUS_FIELD = "Status";
-    private static final Pattern MICRO_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(.\\d+)*");
+    private static final Pattern MICRO_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(\\..*)*");
     private static final String COLUMN_COLOR = "BLUE";
+    private static final String STATUS_FIELD_SETTINGS_URL = "https://github.com/orgs/%s/projects/%s/settings/fields/Status";
 
     @Inject
     @RestClient
@@ -107,12 +108,11 @@ public class GitHubService {
         this.backportLabel = backportLabel;
     }
 
-    public void prepareRequirements(Milestone newMilestone) {
+    public ProjectV2 prepareRequirements(Milestone newMilestone) {
         String ownerId = getOwnerId(repository.owner());
         String repositoryId = getRepositoryId(repository);
-        String minorVersion = getMinorVersion(newMilestone.title);
-        ProjectV2 project = getOrCreateProjectV2(ownerId, repositoryId, repository, minorVersion);
-        addOptionToStatusFieldIfNecessary(project.id, newMilestone.title, String.format(OPTION_DESCRIPTION, newMilestone.title), COLUMN_COLOR);
+        ProjectV2 projectV2 = getOrCreateProjectV2(ownerId, repositoryId, repository, newMilestone.minorVersion());
+        return projectV2;
     }
 
     @PostConstruct
@@ -146,7 +146,10 @@ public class GitHubService {
                 .getJsonObject("repository")
                 .getJsonObject("milestones").getJsonArray("nodes");
         for (int i = 0; i < milestones.size(); i++) {
-            milestoneList.add(milestones.getJsonObject(i).mapTo(Milestone.class));
+            JsonObject milestoneJsonObject = milestones.getJsonObject(i);
+            milestoneList.add(new Milestone(milestoneJsonObject.getString("id"),
+                    milestoneJsonObject.getString("title"),
+                    getMinorVersion(milestoneJsonObject.getString("title"))));
         }
         return milestoneList;
     }
@@ -234,7 +237,7 @@ public class GitHubService {
         Milestone updatedMilestone;
 
         if (pullRequest.milestone != null &&
-                new ComparableVersion(newMilestone.title).compareTo(new ComparableVersion(pullRequest.milestone.title)) > 0) {
+                new ComparableVersion(newMilestone.title()).compareTo(new ComparableVersion(pullRequest.milestone.title())) > 0) {
             // if the PR milestone is already defined and is < to the new milestone, we keep it
             updatedMilestone = pullRequest.milestone;
         } else {
@@ -247,7 +250,7 @@ public class GitHubService {
                 .put("variables", new JsonObject()
                         .put("inputMilestone", new JsonObject()
                                 .put("pullRequestId", pullRequest.id)
-                                .put("milestoneId", updatedMilestone.id))
+                                .put("milestoneId", updatedMilestone.id()))
                         .put("inputLabel", new JsonObject()
                                 .put("labelableId", pullRequest.id)
                                 .put("labelIds", backportLabelId)))
@@ -266,7 +269,7 @@ public class GitHubService {
                     .put("variables", new JsonObject()
                             .put("inputMilestone", new JsonObject()
                                     .put("id", issue.id)
-                                    .put("milestoneId", updatedMilestone.id))
+                                    .put("milestoneId", updatedMilestone.id()))
                             .put("inputLabel", new JsonObject()
                                     .put("labelableId", issue.id)
                                     .put("labelIds", backportLabelId)))
@@ -279,14 +282,20 @@ public class GitHubService {
 
         // Add to ProjectV2 based on milestone version
         try {
-            addIssueOrPullRequestToProjectV2(pullRequest.id, getMinorVersion(newMilestone.title), newMilestone.title);
+            addIssueOrPullRequestToProjectV2(pullRequest.id, newMilestone.minorVersion(), newMilestone.title());
 
             for (Issue issue : pullRequest.linkedIssues) {
-                addIssueOrPullRequestToProjectV2(issue.id, getMinorVersion(newMilestone.title), newMilestone.title);
+                addIssueOrPullRequestToProjectV2(issue.id, newMilestone.minorVersion(), newMilestone.title());
             }
         } catch (IOException e) {
             LOG.errorf(e,"Failed to add pull request: %s to project column", pullRequest.number);
         }
+    }
+
+    public boolean isMilestonePresentInStatusField(String projectId, Milestone milestone) {
+        ProjectV2Field statusField = getStatusField(projectId);
+
+        return statusField.options.stream().anyMatch(o -> milestone.title().equals(o.name));
     }
 
     private Collection<Issue> findIssues(Collection<Integer> issueNumbers) throws IOException {
@@ -376,6 +385,8 @@ public class GitHubService {
         });
     }
 
+    // For now, we can't use this as we need a proper status of if the project has been already created or not
+    @Deprecated
     private ProjectV2 getOrCreateProjectV2(String ownerId, String repositoryId, Repository repository, String minorVersion) {
         return projectCache.computeIfAbsent(minorVersion, mv -> {
             String projectTitle = String.format(PROJECT_NAME, mv);
@@ -410,14 +421,14 @@ public class GitHubService {
                 }
             }
             if (project == null) {
-                project = createProjectV2(ownerId, repositoryId, projectTitle);
+                project = createProjectV2(ownerId, repositoryId, minorVersion, projectTitle);
             }
 
             return project;
         });
     }
 
-    private ProjectV2 createProjectV2(String ownerId, String repositoryId, String title) {
+    private ProjectV2 createProjectV2(String ownerId, String repositoryId, String minorVersion, String title) {
         JsonObject variables = new JsonObject();
         variables.put("ownerId", ownerId);
         variables.put("repositoryId", repositoryId);
@@ -430,14 +441,27 @@ public class GitHubService {
             throw new IllegalStateException(String.format("Unable to create project for owner: %s, title: %s: %s", repository.owner(), title, response.getJsonArray("errors").toString()));
         }
 
-        return response.getJsonObject("data")
-            .getJsonObject("createProjectV2")
-            .getJsonObject("projectV2")
-            .mapTo(ProjectV2.class);
+        ProjectV2 projectV2 = response.getJsonObject("data")
+                .getJsonObject("createProjectV2")
+                .getJsonObject("projectV2")
+                .mapTo(ProjectV2.class);
+
+        initializeProjectV2(projectV2.id, minorVersion);
+
+        return projectV2;
     }
 
     private ProjectV2Field getStatusField(String projectId) {
         return statusFieldCache.computeIfAbsent(projectId, pi -> getProjectV2FieldOptions(projectId, STATUS_FIELD));
+    }
+
+    public ProjectV2Field refreshStatusField(String projectId) {
+        statusFieldCache.remove(projectId);
+        return statusFieldCache.computeIfAbsent(projectId, pi -> getProjectV2FieldOptions(projectId, STATUS_FIELD));
+    }
+
+    public String getStatusFieldSettingsUrl(Integer projectNumber) {
+        return String.format(STATUS_FIELD_SETTINGS_URL, repository.owner(), projectNumber);
     }
 
     private ProjectV2Item addItemToProjectV2(String projectId, String contentId) {
@@ -475,6 +499,32 @@ public class GitHubService {
         }
     }
 
+    public ProjectV2Field initializeProjectV2(String projectId, String minorVersion) {
+        // Get current field options
+        ProjectV2Field statusField = getProjectV2FieldOptions(projectId, STATUS_FIELD);
+
+        // Prepare options list with the new option
+        List<JsonObject> options = new ArrayList<>();
+
+        // Add one option for each micro
+        for (int i = 0; i < 9; i++) {
+            String microVersion = minorVersion + "." + i;
+
+            JsonObject newOptionJson = new JsonObject();
+            newOptionJson.put("name", microVersion);
+            newOptionJson.put("description", String.format(OPTION_DESCRIPTION, microVersion));
+            newOptionJson.put("color", COLUMN_COLOR);
+            options.add(newOptionJson);
+        }
+
+        // Update the field with new options
+        ProjectV2Field projectV2Field = updateProjectV2FieldOptions(projectId, statusField.id, statusField.name, new JsonArray(options));
+        // and make sure the cache is updated
+        statusFieldCache.put(projectId, projectV2Field);
+
+        return projectV2Field;
+    }
+
     /**
      * Adds a new option to a ProjectV2 single select field.
      * This method retrieves all current options, adds the new option, and updates the field.
@@ -483,7 +533,10 @@ public class GitHubService {
      * @param microVersion The name of the new option to add
      * @param newOptionColor The color of the new option (optional, can be null)
      * @return The updated ProjectV2Field with the new option
+     *
+     * @deprecated don't use this method for now as GitHub GraphQL API for single select field doesn't allow to update the field options...
      */
+    @Deprecated
     public ProjectV2Field addOptionToStatusFieldIfNecessary(String projectId, String microVersion, String newOptionDescription, String newOptionColor) {
         // Get current field options
         ProjectV2Field statusField = getProjectV2FieldOptions(projectId, STATUS_FIELD);
