@@ -180,11 +180,19 @@ public class GitHubService {
             JsonObject pr = pullRequests.getJsonObject(i);
             JsonArray commits = pr.getJsonObject("commits").getJsonArray("nodes");
             List<Commit> commitList = new ArrayList<>();
-            for (int j = 0; j < commits.size(); j++) {
-                JsonObject commitNode = commits.getJsonObject(j);
-                Commit commit = commitNode.getJsonObject("commit").mapTo(Commit.class);
-                commit.url = commitNode.getString("url");
+            JsonObject mergeCommit = pr.getJsonObject("mergeCommit");
+            // Was the PR squashed? If so, we only have one parent commit
+            boolean squashed = mergeCommit.getJsonObject("parents").getInteger("totalCount") == 1;
+            if (squashed) {
+                Commit commit = mergeCommit.mapTo(Commit.class);
                 commitList.add(commit);
+            } else {
+                for (int j = 0; j < commits.size(); j++) {
+                    JsonObject commitNode = commits.getJsonObject(j);
+                    Commit commit = commitNode.getJsonObject("commit").mapTo(Commit.class);
+                    commit.url = commitNode.getString("url");
+                    commitList.add(commit);
+                }
             }
             // Sort by commit date
             Collections.sort(commitList);
