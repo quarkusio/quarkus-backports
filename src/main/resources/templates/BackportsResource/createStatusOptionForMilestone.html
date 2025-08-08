@@ -1,0 +1,55 @@
+{#include BackportsResource/base}
+	{#page-class}milestone-choice{/page-class}
+	{#title}Backports{/title}
+	{#body}
+		<div class="ui main container">
+			<div class="ui one column centered grid">
+				<div class="column">
+					<div class="ui tall very padded piled segment">
+						<h3 class="ui header">Configure the project board</h3>
+						<div class="content">
+							<div class="ui warning icon message">
+								<i class="exclamation triangle icon"></i>
+								<div class="content">
+									<div class="header">
+										It is a shame but...
+									</div>
+									<p>The milestone you selected is not present in the project board for {milestone.minorVersion}.</p>
+									<p>Unfortunately, a GitHub GraphQL API limitation prevents us from creating new columns in the project board so you have to create the column manually.</p>
+								</div>
+							</div>
+							<p>&nbsp;</p>
+							<div class="ui two steps">
+								<div class="step">
+									<i class="tools icon"></i>
+									<div class="content">
+										<div class="title">Create {milestone.title} option</div>
+										<div class="description">Go to <a href="{statusFieldSettingsUrl}" target="_blank">Status settings page</a> and create the {milestone.title} option.</div>
+									</div>
+								</div>
+								<div class="step">
+									<i class="rocket icon"></i>
+									<div class="content">
+										<div class="title">You're done!</div>
+										<div class="description"><a href="{refreshStatusFieldUrl}">Go back to the backports page</a></div>
+									</div>
+								</div>
+							</div>
+							<p>&nbsp;</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/body}
+	{#scripts}
+		<script type="text/javascript">
+			$('select.dropdown').dropdown();
+
+			$('#lets-backport').click(function() {
+				window.location.href = '/backports/' + $('select#milestone').children("option:selected").val() + '/';
+				return false;
+			});
+		</script>
+	{/scripts}
+{/include}
