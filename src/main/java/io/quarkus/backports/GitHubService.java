@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.quarkus.backports.model.Repository;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -26,6 +25,7 @@ import jakarta.inject.Inject;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import io.quarkus.backports.graphql.GraphQLClient;
 import io.quarkus.backports.model.Commit;
@@ -36,13 +36,13 @@ import io.quarkus.backports.model.ProjectV2Field;
 import io.quarkus.backports.model.ProjectV2FieldOption;
 import io.quarkus.backports.model.ProjectV2Item;
 import io.quarkus.backports.model.PullRequest;
+import io.quarkus.backports.model.Repository;
 import io.quarkus.backports.model.User;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class GitHubService {
@@ -97,12 +97,9 @@ public class GitHubService {
 
     @Inject
     public GitHubService(
-            @ConfigProperty(name = "backports.token")
-                    String token,
-            @ConfigProperty(name = "backports.repository")
-                    String repositoryName,
-            @ConfigProperty(name = "backports.label")
-                    String backportLabel) {
+            @ConfigProperty(name = "backports.token") String token,
+            @ConfigProperty(name = "backports.repository") String repositoryName,
+            @ConfigProperty(name = "backports.label") String backportLabel) {
         this.token = "Bearer " + token;
         this.repository = Repository.fromString(repositoryName);
         this.backportLabel = backportLabel;
@@ -124,10 +121,12 @@ public class GitHubService {
             throw new RuntimeException(response.toString());
         }
 
-        JsonObject backportLabelFromResponse = response.getJsonObject("data").getJsonObject("repository").getJsonObject("label");
+        JsonObject backportLabelFromResponse = response.getJsonObject("data").getJsonObject("repository")
+                .getJsonObject("label");
 
         if (backportLabelFromResponse == null) {
-            throw new IllegalStateException("Backport label " + backportLabel + " could not be found in repository " + repository);
+            throw new IllegalStateException(
+                    "Backport label " + backportLabel + " could not be found in repository " + repository);
         }
 
         this.backportLabelId = backportLabelFromResponse.getString("id");
@@ -237,7 +236,8 @@ public class GitHubService {
         Milestone updatedMilestone;
 
         if (pullRequest.milestone != null &&
-                new ComparableVersion(newMilestone.title()).compareTo(new ComparableVersion(pullRequest.milestone.title())) > 0) {
+                new ComparableVersion(newMilestone.title())
+                        .compareTo(new ComparableVersion(pullRequest.milestone.title())) > 0) {
             // if the PR milestone is already defined and is < to the new milestone, we keep it
             updatedMilestone = pullRequest.milestone;
         } else {
@@ -253,8 +253,7 @@ public class GitHubService {
                                 .put("milestoneId", updatedMilestone.id()))
                         .put("inputLabel", new JsonObject()
                                 .put("labelableId", pullRequest.id)
-                                .put("labelIds", backportLabelId)))
-        );
+                                .put("labelIds", backportLabelId))));
         // Any errors?
         if (response.getJsonArray("errors") != null) {
             throw new IOException(response.toString());
@@ -272,8 +271,7 @@ public class GitHubService {
                                     .put("milestoneId", updatedMilestone.id()))
                             .put("inputLabel", new JsonObject()
                                     .put("labelableId", issue.id)
-                                    .put("labelIds", backportLabelId)))
-            );
+                                    .put("labelIds", backportLabelId))));
             // Any errors?
             if (response.getJsonArray("errors") != null) {
                 throw new IOException(response.toString());
@@ -288,7 +286,7 @@ public class GitHubService {
                 addIssueOrPullRequestToProjectV2(issue.id, newMilestone.minorVersion(), newMilestone.title());
             }
         } catch (IOException e) {
-            LOG.errorf(e,"Failed to add pull request: %s to project column", pullRequest.number);
+            LOG.errorf(e, "Failed to add pull request: %s to project column", pullRequest.number);
         }
     }
 
@@ -334,7 +332,8 @@ public class GitHubService {
         ProjectV2 project = getOrCreateProjectV2(ownerId, repositoryId, repository, minorVersion);
         ProjectV2Field statusField = getStatusField(project.id);
         ProjectV2Item item = addItemToProjectV2(project.id, itemId);
-        Optional<ProjectV2FieldOption> microVersionOption = statusField.options.stream().filter(o -> microVersion.equals(o.name)).findFirst();
+        Optional<ProjectV2FieldOption> microVersionOption = statusField.options.stream()
+                .filter(o -> microVersion.equals(o.name)).findFirst();
 
         if (microVersionOption.isEmpty()) {
             throw new IllegalStateException("Unable to find an option for micro version: " + microVersion);
@@ -381,7 +380,8 @@ public class GitHubService {
                 return repositoryNode.getString("id");
             }
 
-            throw new IllegalStateException(String.format("Unable to get the repository information for repository: %s", repository));
+            throw new IllegalStateException(
+                    String.format("Unable to get the repository information for repository: %s", repository));
         });
     }
 
@@ -399,7 +399,8 @@ public class GitHubService {
                     .put("query", Templates.getProjectsV2().render()).put("variables", variables));
 
             if (response.getJsonArray("errors") != null) {
-                throw new IllegalStateException(String.format("Unable to get projects for repository: %s: %s", repository.fullName(), response.getJsonArray("errors").toString()));
+                throw new IllegalStateException(String.format("Unable to get projects for repository: %s: %s",
+                        repository.fullName(), response.getJsonArray("errors").toString()));
             }
 
             JsonObject data = response.getJsonObject("data");
@@ -435,10 +436,11 @@ public class GitHubService {
         variables.put("title", title);
 
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
-            .put("query", Templates.createProjectV2().render()).put("variables", variables));
-        
+                .put("query", Templates.createProjectV2().render()).put("variables", variables));
+
         if (response.getJsonArray("errors") != null) {
-            throw new IllegalStateException(String.format("Unable to create project for owner: %s, title: %s: %s", repository.owner(), title, response.getJsonArray("errors").toString()));
+            throw new IllegalStateException(String.format("Unable to create project for owner: %s, title: %s: %s",
+                    repository.owner(), title, response.getJsonArray("errors").toString()));
         }
 
         ProjectV2 projectV2 = response.getJsonObject("data")
@@ -466,21 +468,22 @@ public class GitHubService {
 
     private ProjectV2Item addItemToProjectV2(String projectId, String contentId) {
         JsonObject variables = new JsonObject()
-            .put("projectId", projectId)
-            .put("contentId", contentId);
-        
+                .put("projectId", projectId)
+                .put("contentId", contentId);
+
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
-            .put("query", Templates.addItemToProjectV2().render())
-            .put("variables", variables));
-        
+                .put("query", Templates.addItemToProjectV2().render())
+                .put("variables", variables));
+
         if (response.getJsonArray("errors") != null) {
-            throw new IllegalStateException(String.format("Unable to add item: %s to project: %s. Errors: %s", "TODO item", "TODO project", response.toString()));
+            throw new IllegalStateException(String.format("Unable to add item: %s to project: %s. Errors: %s", "TODO item",
+                    "TODO project", response.toString()));
         }
-        
+
         return response.getJsonObject("data")
-            .getJsonObject("addProjectV2ItemById")
-            .getJsonObject("item")
-            .mapTo(ProjectV2Item.class);
+                .getJsonObject("addProjectV2ItemById")
+                .getJsonObject("item")
+                .mapTo(ProjectV2Item.class);
     }
 
     private void updateProjectV2ItemFieldValue(String projectId, String itemId, String fieldId, String optionId) {
@@ -518,7 +521,8 @@ public class GitHubService {
         }
 
         // Update the field with new options
-        ProjectV2Field projectV2Field = updateProjectV2FieldOptions(projectId, statusField.id, statusField.name, new JsonArray(options));
+        ProjectV2Field projectV2Field = updateProjectV2FieldOptions(projectId, statusField.id, statusField.name,
+                new JsonArray(options));
         // and make sure the cache is updated
         statusFieldCache.put(projectId, projectV2Field);
 
@@ -528,31 +532,33 @@ public class GitHubService {
     /**
      * Adds a new option to a ProjectV2 single select field.
      * This method retrieves all current options, adds the new option, and updates the field.
-     * 
+     *
      * @param projectId The ID of the ProjectV2
      * @param microVersion The name of the new option to add
      * @param newOptionColor The color of the new option (optional, can be null)
      * @return The updated ProjectV2Field with the new option
      *
-     * @deprecated don't use this method for now as GitHub GraphQL API for single select field doesn't allow to update the field options...
+     * @deprecated don't use this method for now as GitHub GraphQL API for single select field doesn't allow to update the field
+     *             options...
      */
     @Deprecated
-    public ProjectV2Field addOptionToStatusFieldIfNecessary(String projectId, String microVersion, String newOptionDescription, String newOptionColor) {
+    public ProjectV2Field addOptionToStatusFieldIfNecessary(String projectId, String microVersion, String newOptionDescription,
+            String newOptionColor) {
         // Get current field options
         ProjectV2Field statusField = getProjectV2FieldOptions(projectId, STATUS_FIELD);
-        
+
         // Check if option already exists
         boolean optionExists = statusField.options.stream()
                 .anyMatch(option -> microVersion.equals(option.name));
-        
+
         if (optionExists) {
             LOG.debugf("Option '%s' already exists in field '%s'", microVersion, statusField.name);
             return statusField;
         }
-        
+
         // Prepare options list with the new option
         List<JsonObject> options = new ArrayList<>();
-        
+
         // Add existing options
         for (ProjectV2FieldOption option : statusField.options) {
             // drop all the standard options
@@ -568,7 +574,7 @@ public class GitHubService {
             }
             options.add(optionJson);
         }
-        
+
         // Add new option
         JsonObject newOptionJson = new JsonObject();
         newOptionJson.put("name", microVersion);
@@ -581,7 +587,8 @@ public class GitHubService {
         options.sort(Comparator.comparing(o -> new ComparableVersion(o.getString("name"))));
 
         // Update the field with new options
-        ProjectV2Field projectV2Field = updateProjectV2FieldOptions(projectId, statusField.id, statusField.name, new JsonArray(options));
+        ProjectV2Field projectV2Field = updateProjectV2FieldOptions(projectId, statusField.id, statusField.name,
+                new JsonArray(options));
         // and make sure the cache is updated
         statusFieldCache.put(projectId, projectV2Field);
 
@@ -590,7 +597,7 @@ public class GitHubService {
 
     /**
      * Retrieves the options for a specific ProjectV2 single select field.
-     * 
+     *
      * @param projectId The ID of the ProjectV2
      * @param fieldName The ID of the field
      * @return The ProjectV2Field with its options
@@ -599,19 +606,19 @@ public class GitHubService {
         JsonObject variables = new JsonObject()
                 .put("projectId", projectId)
                 .put("fieldName", fieldName);
-        
+
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
                 .put("query", Templates.getProjectV2FieldOptions().render())
                 .put("variables", variables));
-        
+
         if (response.getJsonArray("errors") != null) {
             throw new IllegalStateException(String.format("Unable to get field options: %s", response.toString()));
         }
-        
+
         JsonObject fieldData = response.getJsonObject("data")
                 .getJsonObject("node")
                 .getJsonObject("field");
-        
+
         if (fieldData == null) {
             throw new IllegalArgumentException(String.format("Field %s not found in project %s", fieldName, projectId));
         }
@@ -627,7 +634,7 @@ public class GitHubService {
 
     /**
      * Updates a ProjectV2 field with new options.
-     * 
+     *
      * @param projectId The ID of the ProjectV2
      * @param fieldId The ID of the field to update
      * @param fieldName The name of the field
@@ -639,25 +646,26 @@ public class GitHubService {
                 .put("fieldId", fieldId)
                 .put("name", fieldName)
                 .put("options", options);
-        
+
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
                 .put("query", Templates.updateProjectV2Field().render())
                 .put("variables", variables));
-        
+
         if (response.getJsonArray("errors") != null) {
             throw new IllegalStateException(String.format("Unable to update field options: %s", response.toString()));
         }
-        
+
         JsonObject fieldData = response.getJsonObject("data")
                 .getJsonObject("updateProjectV2Field")
                 .getJsonObject("projectV2Field");
-        
+
         return fieldData.mapTo(ProjectV2Field.class);
     }
 
     public static String getMinorVersion(String version) {
         if (!MICRO_VERSION_PATTERN.matcher(version).matches()) {
-            throw new IllegalArgumentException("Invalid version " + version + ". Versions should be [0-9]+.[0-9]+.[0-9]+(.[0-9]+)?");
+            throw new IllegalArgumentException(
+                    "Invalid version " + version + ". Versions should be [0-9]+.[0-9]+.[0-9]+(.[0-9]+)?");
         }
 
         String[] versionParts = version.split("\\.");
@@ -685,7 +693,6 @@ public class GitHubService {
          * Returns the issues given their respective numbers
          */
         public static native TemplateInstance findIssues(String owner, String repo, Collection<Integer> issues);
-
 
         /**
          * Update the Pull Request to the specified milestone and remove backport label

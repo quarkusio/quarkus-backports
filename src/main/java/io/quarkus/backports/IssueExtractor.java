@@ -15,8 +15,10 @@ public class IssueExtractor {
     private final Pattern pattern;
 
     public IssueExtractor(@ConfigProperty(name = "backports.repository") String repository) {
-        pattern = Pattern.compile("\\b(?:(?:fix(?:e[sd])?|(?:(?:resolve|close)[sd]?))):?\\s+(?:https?:\\/\\/github.com\\/" + Pattern.quote(repository) + "\\/issues\\/|#)(\\d+)",
-                                  Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile(
+                "\\b(?:(?:fix(?:e[sd])?|(?:(?:resolve|close)[sd]?))):?\\s+(?:https?:\\/\\/github.com\\/"
+                        + Pattern.quote(repository) + "\\/issues\\/|#)(\\d+)",
+                Pattern.CASE_INSENSITIVE);
     }
 
     public Set<Integer> extractIssueNumbers(String content) {

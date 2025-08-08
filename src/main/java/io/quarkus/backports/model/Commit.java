@@ -20,8 +20,10 @@ public class Commit implements Comparable<Commit> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Commit)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Commit))
+            return false;
         Commit commit = (Commit) o;
         return oid.equals(commit.oid);
     }

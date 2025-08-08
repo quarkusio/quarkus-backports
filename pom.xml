@@ -10,14 +10,16 @@
     <properties>
         <compiler-plugin.version>3.14.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.testRelease>17</maven.compiler.testRelease>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.version>3.25.1</quarkus.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <surefire-plugin.version>3.5.3</surefire-plugin.version>
+        <formatter-plugin.version>2.27.0</formatter-plugin.version>
+        <impsort-plugin.version>1.12.0</impsort-plugin.version>
         <maven-artifact.version>3.9.10</maven-artifact.version>
         <assertj.version>3.27.4</assertj.version>
     </properties>
@@ -85,6 +87,46 @@
 
     </dependencies>
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>net.revelc.code.formatter</groupId>
+                    <artifactId>formatter-maven-plugin</artifactId>
+                    <version>${formatter-plugin.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>io.quarkus</groupId>
+                            <artifactId>quarkus-ide-config</artifactId>
+                            <version>${quarkus.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <configuration>
+                        <configFile>eclipse-format.xml</configFile>
+                        <lineEnding>LF</lineEnding>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>process-sources</phase>
+                            <goals>
+                                <goal>format</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>net.revelc.code</groupId>
+                    <artifactId>impsort-maven-plugin</artifactId>
+                    <version>${impsort-plugin.version}</version>
+                    <configuration>
+                        <!-- store outside of target to speed up formatting when mvn clean is used -->
+                        <cachedir>.cache/impsort-maven-plugin-${impsort-plugin.version}</cachedir>
+                        <groups>java.,javax.,jakarta.,org.,com.</groups>
+                        <staticGroups>*</staticGroups>
+                        <removeUnused>true</removeUnused>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>io.quarkus</groupId>
@@ -148,6 +190,86 @@
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
             </properties>
+        </profile>
+        <profile>
+            <id>format</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>!no-format</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>net.revelc.code.formatter</groupId>
+                        <artifactId>formatter-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>process-sources</phase>
+                                <goals>
+                                    <goal>format</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>net.revelc.code</groupId>
+                        <artifactId>impsort-maven-plugin</artifactId>
+                        <configuration>
+                            <removeUnused>true</removeUnused>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sort-imports</id>
+                                <goals>
+                                    <goal>sort</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>validate</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <property>
+                    <name>no-format</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>net.revelc.code.formatter</groupId>
+                        <artifactId>formatter-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>process-sources</phase>
+                                <goals>
+                                    <goal>validate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>net.revelc.code</groupId>
+                        <artifactId>impsort-maven-plugin</artifactId>
+                        <configuration>
+                            <removeUnused>true</removeUnused>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>check-imports</id>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
