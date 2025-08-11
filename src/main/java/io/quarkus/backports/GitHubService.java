@@ -359,6 +359,10 @@ public class GitHubService {
             JsonObject response = graphQLClient.graphql(token, new JsonObject()
                     .put("query", Templates.getOwnerInfo().render()).put("variables", variables));
 
+            if (response.getJsonArray("errors") != null &&
+                    response.getJsonObject("data") == null) {
+                throw new IllegalStateException("Unable to get owner info: " + response.getJsonArray("errors").toString());
+            }
             JsonObject data = response.getJsonObject("data");
             JsonObject org = data.getJsonObject("organization");
             if (org != null) {
