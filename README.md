@@ -32,7 +32,8 @@ In your application directory, create a .env file containing your OAuth token:
 BACKPORTS_TOKEN=<TOKEN>
 ```
 
-Obviously, this token needs write permissions for the repository.
+The token can be created at https://github.com/settings/tokens and needs to have
+the following permissions: `notifications, project, public_repo, read:org, repo:status`.
 
 For testing, you obviously don't want to use the Quarkus repository.
 You can easily target another repository with:
