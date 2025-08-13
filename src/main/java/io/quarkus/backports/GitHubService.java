@@ -56,6 +56,9 @@ public class GitHubService {
     private static final Pattern MICRO_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(\\..*)*");
     private static final String COLUMN_COLOR = "BLUE";
     private static final String STATUS_FIELD_SETTINGS_URL = "https://github.com/orgs/%s/projects/%s/settings/fields/Status";
+    private static final String PULL_REQUESTS_FOR_BACKPORT_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aclosed%%20is%%3Amerged%%20label%%3A%s";
+    private static final String OPEN_PULL_REQUESTS_TARGETING_BRANCH_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aopen%%20base%%3A%s";
+    private static final String MERGED_PULL_REQUESTS_TARGETING_BRANCH_WITH_NO_MILESTONE_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aclosed%%20is%%3Amerged%%20no%%3Amilestone%%20base%%3A%s";
 
     @Inject
     @RestClient
@@ -95,6 +98,11 @@ public class GitHubService {
      */
     private final Map<String, ProjectV2Field> statusFieldCache = new ConcurrentHashMap<>();
 
+    /**
+     * Cache for pull requests keyed by pull request number.
+     */
+    private final Map<Integer, PullRequest> pullRequestCache = new ConcurrentHashMap<>();
+
     @Inject
     public GitHubService(
             @ConfigProperty(name = "backports.token") String token,
@@ -103,6 +111,31 @@ public class GitHubService {
         this.token = "Bearer " + token;
         this.repository = Repository.fromString(repositoryName);
         this.backportLabel = backportLabel;
+    }
+
+    public void clearPullRequestCache() {
+        pullRequestCache.clear();
+    }
+
+    public PullRequest getPullRequest(Integer number) {
+        PullRequest pullRequest = pullRequestCache.get(number);
+        if (pullRequest == null) {
+            throw new IllegalArgumentException("Something is wrong: we could not find pull request in the cache: #" + number);
+        }
+        return pullRequest;
+    }
+
+    public String getPullRequestsForBackportLabelUrl() {
+        return String.format(PULL_REQUESTS_FOR_BACKPORT_LABEL_URL, repository.fullName(), backportLabel);
+    }
+
+    public String getOpenPullRequestsTargetingBranchUrl(Milestone milestone) {
+        return String.format(OPEN_PULL_REQUESTS_TARGETING_BRANCH_LABEL_URL, repository.fullName(), milestone.minorVersion());
+    }
+
+    public String getMergedPullRequestsWithNoMilestoneUrl(Milestone milestone) {
+        return String.format(MERGED_PULL_REQUESTS_TARGETING_BRANCH_WITH_NO_MILESTONE_LABEL_URL, repository.fullName(),
+                milestone.minorVersion());
     }
 
     public ProjectV2 prepareRequirements(Milestone newMilestone) {
@@ -162,14 +195,51 @@ public class GitHubService {
         return milestoneList;
     }
 
-    @CacheResult(cacheName = CacheNames.PULLREQUESTS_CACHE_NAME)
+    @CacheResult(cacheName = CacheNames.PULL_REQUESTS_TO_BACKPORT_CACHE_NAME)
     public Collection<PullRequest> getBackportCandidatesPullRequests() throws IOException {
         JsonObject response = graphQLClient.graphql(token, new JsonObject()
-                .put("query", Templates.listPullRequests(repository.fullName(), backportLabel).render()));
+                .put("query", Templates.listPullRequestsToBackport(repository.fullName(), backportLabel).render()));
         // Any errors?
         if (response.getJsonArray("errors") != null) {
             throw new IOException(response.toString());
         }
+
+        return extractPullRequestsFromResponse(response);
+    }
+
+    public Collection<PullRequest> getOpenPullRequestsTargetingBranch(Milestone milestone) throws IOException {
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query",
+                        Templates.listOpenPullRequestsTargetingBranch(repository.fullName(), milestone.minorVersion())
+                                .render()));
+        // Any errors?
+        if (response.getJsonArray("errors") != null) {
+            throw new IOException(response.toString());
+        }
+
+        return extractPullRequestsFromResponse(response);
+    }
+
+    public Collection<PullRequest> getMergedPullRequestsTargetingBranchWithNoMilestone(Milestone milestone) throws IOException {
+        JsonObject response = graphQLClient.graphql(token, new JsonObject()
+                .put("query",
+                        Templates.listMergedPullRequestsTargetingBranchWithNoMilestone(repository.fullName(),
+                                milestone.minorVersion()).render()));
+        // Any errors?
+        if (response.getJsonArray("errors") != null) {
+            throw new IOException(response.toString());
+        }
+
+        // we will exclude the backport PRs from this list
+        Pattern backportPrPattern = Pattern.compile(
+                "^\\[" + Pattern.quote(milestone.minorVersion()) + "] " + Pattern.quote(milestone.title()) + " backport.*");
+
+        return extractPullRequestsFromResponse(response).stream()
+                .filter(pr -> !backportPrPattern.matcher(pr.title).matches())
+                .toList();
+    }
+
+    private Collection<PullRequest> extractPullRequestsFromResponse(JsonObject response) throws IOException {
         SimpleDateFormat sdf = new SimpleDateFormat(DATE_PATTERN);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         Set<PullRequest> prList = new TreeSet<>();
@@ -195,8 +265,11 @@ public class GitHubService {
                 pullRequest.createdAt = sdf.parse(pr.getString("createdAt"));
             } catch (ParseException ignore) {
             }
+            pullRequest.merged = pr.getBoolean("merged");
             try {
-                pullRequest.mergedAt = sdf.parse(pr.getString("mergedAt"));
+                if (pr.getString("mergedAt") != null) {
+                    pullRequest.mergedAt = sdf.parse(pr.getString("mergedAt"));
+                }
             } catch (ParseException ignore) {
             }
             pullRequest.title = pr.getString("title");
@@ -238,6 +311,11 @@ public class GitHubService {
             pullRequest.linkedIssues = issues;
             prList.add(pullRequest);
         }
+
+        for (PullRequest pr : prList) {
+            pullRequestCache.put(pr.number, pr);
+        }
+
         return prList;
     }
 
@@ -297,6 +375,11 @@ public class GitHubService {
         } catch (IOException e) {
             LOG.errorf(e, "Failed to add pull request: %s to project column", pullRequest.number);
         }
+    }
+
+    public void markPullRequestAsMerged(PullRequest pullRequest, Milestone newMilestone) throws IOException {
+        // for now, let's do the exact same thing
+        markPullRequestAsBackported(pullRequest, newMilestone);
     }
 
     public boolean isMilestonePresentInStatusField(String projectId, Milestone milestone) {
@@ -695,7 +778,17 @@ public class GitHubService {
         /**
          * Returns the (closed?) pull requests that match the specified label
          */
-        public static native TemplateInstance listPullRequests(String repo, String label);
+        public static native TemplateInstance listPullRequestsToBackport(String repo, String label);
+
+        /**
+         * Returns the open pull requests targeting the specified branch
+         */
+        public static native TemplateInstance listOpenPullRequestsTargetingBranch(String repo, String branch);
+
+        /**
+         * Returns the open pull requests targeting the specified branch
+         */
+        public static native TemplateInstance listMergedPullRequestsTargetingBranchWithNoMilestone(String repo, String branch);
 
         /**
          * Returns the backport label ID

@@ -1,0 +1,77 @@
+{
+  search(query: "repo:{repo} is:pr is:merged base:{branch} no:milestone", type: ISSUE, last: 100) {
+    nodes {
+      ... on PullRequest {
+        id
+        number
+        url
+        title
+        body
+        merged
+        mergedAt
+        createdAt
+        labels (last: 100) {
+          nodes {
+            name
+          }
+        }
+        milestone {
+          id
+          title
+        }
+        author {
+          ... on User {
+            login
+            avatarUrl
+            name
+            url
+          }
+        }
+        commits(last: 100) {
+          nodes {
+            url
+            commit {
+              url
+              message
+              oid
+              abbreviatedOid
+              committedDate
+            }
+          }
+        }
+        # Issue events linked to this pull-request
+        # See https://github.community/t/get-all-issues-linked-to-a-pull-request/14653/6
+        timelineItems(itemTypes: [CONNECTED_EVENT, DISCONNECTED_EVENT], first: 100) {
+          nodes {
+            ... on ConnectedEvent {
+              subject {
+                ... on Issue {
+                  id
+                  number
+                  title
+                  url
+                  body
+                  author {
+                    ... on User {
+                      login
+                      avatarUrl
+                      name
+                      url
+                    }
+                  }
+                }
+              }
+            }
+            ... on DisconnectedEvent {
+              subject {
+                ... on Issue {
+                  number
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
