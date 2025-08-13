@@ -61,6 +61,7 @@ public class GitHubService {
     private static final String MERGED_PULL_REQUESTS_TARGETING_BRANCH_WITH_NO_MILESTONE_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aclosed%%20is%%3Amerged%%20no%%3Amilestone%%20base%%3A%s";
     private static final Pattern BACKPORT_PULL_REQUEST_PATTERN = Pattern
             .compile("^\\[[0-9]+\\.[0-9]+] [0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)? backport.*");
+    private static final String LABEL_AREA_INFRA = "area/infra";
 
     @Inject
     @RestClient
@@ -232,8 +233,9 @@ public class GitHubService {
             throw new IOException(response.toString());
         }
 
-        // we will exclude the backport PRs from this list
+        // we will exclude the backport PRs from this list, and all the PRs with area/infra
         return extractPullRequestsFromResponse(response).stream()
+                .filter(pr -> !pr.labels.contains(LABEL_AREA_INFRA))
                 .filter(pr -> !BACKPORT_PULL_REQUEST_PATTERN.matcher(pr.title).matches())
                 .toList();
     }
@@ -247,16 +249,22 @@ public class GitHubService {
                 .getJsonArray("nodes");
         for (int i = 0; i < pullRequests.size(); i++) {
             JsonObject pr = pullRequests.getJsonObject(i);
-            JsonArray commits = pr.getJsonObject("commits").getJsonArray("nodes");
-            List<Commit> commitList = new ArrayList<>();
-            for (int j = 0; j < commits.size(); j++) {
-                JsonObject commitNode = commits.getJsonObject(j);
-                Commit commit = commitNode.getJsonObject("commit").mapTo(Commit.class);
-                commit.url = commitNode.getString("url");
-                commitList.add(commit);
+            List<Commit> commitList;
+            if (pr.getJsonObject("commits") != null) {
+                JsonArray commits = pr.getJsonObject("commits").getJsonArray("nodes");
+                commitList = new ArrayList<>();
+                for (int j = 0; j < commits.size(); j++) {
+                    JsonObject commitNode = commits.getJsonObject(j);
+                    Commit commit = commitNode.getJsonObject("commit").mapTo(Commit.class);
+                    commit.url = commitNode.getString("url");
+                    commitList.add(commit);
+                }
+                // Sort by commit date
+                Collections.sort(commitList);
+            } else {
+                commitList = List.of();
             }
-            // Sort by commit date
-            Collections.sort(commitList);
+
             PullRequest pullRequest = new PullRequest();
             pullRequest.id = pr.getString("id");
             pullRequest.number = pr.getInteger("number");
@@ -292,12 +300,14 @@ public class GitHubService {
             // As these events can happen multiple times, we need to retain only events in an odd number
             // (even means the issue was connected and disconnected)
             Set<Issue> issues = new TreeSet<>();
-            final JsonArray timelineItems = pr.getJsonObject("timelineItems").getJsonArray("nodes");
-            for (int j = 0; j < timelineItems.size(); j++) {
-                Issue issue = timelineItems.getJsonObject(j).getJsonObject("subject").mapTo(Issue.class);
-                // Add the issue to the Set. If it already exists, remove
-                if (!issues.add(issue)) {
-                    issues.remove(issue);
+            if (pr.getJsonObject("timelineItems") != null) {
+                final JsonArray timelineItems = pr.getJsonObject("timelineItems").getJsonArray("nodes");
+                for (int j = 0; j < timelineItems.size(); j++) {
+                    Issue issue = timelineItems.getJsonObject(j).getJsonObject("subject").mapTo(Issue.class);
+                    // Add the issue to the Set. If it already exists, remove
+                    if (!issues.add(issue)) {
+                        issues.remove(issue);
+                    }
                 }
             }
             // Extract missing issue numbers from the PR body

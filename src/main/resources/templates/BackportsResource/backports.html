@@ -166,24 +166,6 @@
 									{/}
 								</span>
 						</div>
-						<div class="ui piled segment commits" id="commits-{pr.number}">
-							<div class="ui relaxed divided list">
-								{#for commit in commits}
-								<div class="item">
-									<div class="right floated content">
-										&nbsp;
-									</div>
-									<div class="middle aligned content">
-										<div class="commit">
-											<i class="git alternate icon"></i>
-											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
-											<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
-										</div>
-									</div>
-								</div>
-								{/}
-							</div>
-						</div>
 					</td>
 					<td class="center aligned">
 						&nbsp;
@@ -210,7 +192,7 @@
 				<i class="question circle outline icon"></i>
 				<div class="content">
 					<p>We only list here the <a href="{mergedPullRequestsWithNoMilestoneUrl}" target="_blank">merged pull requests targeting branch {milestone.minorVersion} which don't have a milestone set</a>.</p>
-					<p>You can use this list to set the milestone to {milestone.title} <b>(if it's the right one!)</b> using the appropriate button.</p>
+					<p>You can use this list to set the milestone to {milestone.title} <b>(provided it is the right one, if not do it manually!)</b> using the appropriate button.</p>
 				</div>
 			</div>
 			<table class="ui celled striped table">
@@ -219,7 +201,7 @@
 					<th class="one wide" style="width:10px; text-align:right">#</th>
 					<th class="thirteen wide">Pull Request</th>
 					<th class="one wide">N/A</th>
-					<th class="one wide">Done</th>
+					<th class="one wide">Affect</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -243,30 +225,12 @@
 									{/}
 								</span>
 						</div>
-						<div class="ui piled segment commits" id="commits-{pr.number}">
-							<div class="ui relaxed divided list">
-								{#for commit in commits}
-								<div class="item">
-									<div class="right floated content">
-										&nbsp;
-									</div>
-									<div class="middle aligned content">
-										<div class="commit">
-											<i class="git alternate icon"></i>
-											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
-											<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
-										</div>
-									</div>
-								</div>
-								{/}
-							</div>
-						</div>
 					</td>
 					<td class="center aligned">
 						&nbsp;
 					</td>
 					<td class="center aligned">
-						<div class="ui icon button blue" id="mark-merged-{pr.number}" title="Mark as merged">
+						<div class="ui icon button blue" id="mark-merged-{pr.number}" title="Affect milestone">
 							<i class="arrow alternate circle right icon"></i>
 						</div>
 						<script type="text/javascript">
