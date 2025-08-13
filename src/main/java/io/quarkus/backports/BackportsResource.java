@@ -36,11 +36,15 @@ public class BackportsResource {
     @ConfigProperty(name = "backports.repository")
     String repository;
 
+    @ConfigProperty(name = "backports.label")
+    String label;
+
     @CheckedTemplate
     public static class Templates {
         public static native TemplateInstance index(String repository, Collection<Milestone> milestones);
 
-        public static native TemplateInstance backports(Milestone milestone, Collection<PullRequest> prs);
+        public static native TemplateInstance backports(Milestone milestone, Collection<PullRequest> prs, String label,
+                String repository);
 
         public static native TemplateInstance createStatusOptionForMilestone(ProjectV2 projectV2, Milestone milestone,
                 String statusFieldSettingsUrl, String refreshStatusFieldUrl);
@@ -64,7 +68,7 @@ public class BackportsResource {
         ProjectV2 projectV2 = gitHub.prepareRequirements(milestone);
 
         if (gitHub.isMilestonePresentInStatusField(projectV2.id, milestone)) {
-            return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests());
+            return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests(), label, repository);
         } else {
             return Templates.createStatusOptionForMilestone(projectV2, milestone,
                     gitHub.getStatusFieldSettingsUrl(projectV2.number),
