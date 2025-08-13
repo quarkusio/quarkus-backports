@@ -27,18 +27,6 @@
             url
           }
         }
-        commits(last: 100) {
-          nodes {
-            url
-            commit {
-              url
-              message
-              oid
-              abbreviatedOid
-              committedDate
-            }
-          }
-        }
         # Issue events linked to this pull-request
         # See https://github.community/t/get-all-issues-linked-to-a-pull-request/14653/6
         timelineItems(itemTypes: [CONNECTED_EVENT, DISCONNECTED_EVENT], first: 100) {
