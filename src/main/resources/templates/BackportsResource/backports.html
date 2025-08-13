@@ -11,6 +11,22 @@
 	{/additionalTitleElements}
 	{#body}
 		<div class="ui main container">
+			<hr />
+			<div class="ui three item compact menu">
+				<a class="item">
+					<i class="icon history"></i> To backport
+					<div class="ui blue label">{pullRequestsToBackport.size}</div>
+				</a>
+				<a class="item">
+					<i class="icon code branch"></i> To merge
+					<div class="ui blue label">{openPullRequestsTargetingBranch.size}</div>
+				</a>
+				<a class="item">
+					<i class="icon map signs red"></i> No milestone
+					<div class="ui {#if mergedPullRequestsTargetingBranchWithNoMilestone}red{#else}blue{/if} label">{mergedPullRequestsTargetingBranchWithNoMilestone.size}</div>
+				</a>
+			</div>
+			<hr />
 			<h2>Pull requests to backport</h2>
 			<div class="ui icon message blue small">
 				<i class="question circle outline icon"></i>

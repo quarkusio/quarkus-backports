@@ -59,6 +59,8 @@ public class GitHubService {
     private static final String PULL_REQUESTS_FOR_BACKPORT_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aclosed%%20is%%3Amerged%%20label%%3A%s";
     private static final String OPEN_PULL_REQUESTS_TARGETING_BRANCH_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aopen%%20base%%3A%s";
     private static final String MERGED_PULL_REQUESTS_TARGETING_BRANCH_WITH_NO_MILESTONE_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aclosed%%20is%%3Amerged%%20no%%3Amilestone%%20base%%3A%s";
+    private static final Pattern BACKPORT_PULL_REQUEST_PATTERN = Pattern
+            .compile("^\\[[0-9]+\\.[0-9]+] [0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)? backport.*");
 
     @Inject
     @RestClient
@@ -231,11 +233,8 @@ public class GitHubService {
         }
 
         // we will exclude the backport PRs from this list
-        Pattern backportPrPattern = Pattern.compile(
-                "^\\[" + Pattern.quote(milestone.minorVersion()) + "] " + Pattern.quote(milestone.title()) + " backport.*");
-
         return extractPullRequestsFromResponse(response).stream()
-                .filter(pr -> !backportPrPattern.matcher(pr.title).matches())
+                .filter(pr -> !BACKPORT_PULL_REQUEST_PATTERN.matcher(pr.title).matches())
                 .toList();
     }
 
