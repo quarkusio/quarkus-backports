@@ -13,10 +13,11 @@
 </head>
 <body>
 	<div class="ui fixed inverted menu main-menu">
-		<a class="header item" href="/">
+		<a class="header item title" href="/">
 			<img class="logo" src="https://design.jboss.org/quarkus/logo/final/SVG/quarkus_icon_rgb_reverse.svg" alt="Quarkus logo" width="40" height="30">
 			{#insert title /}
 		</a>
+		{#insert additionalTitleElements /}
 	</div>
 	<div class="{#insert page-class/}">
 		{#insert body/}

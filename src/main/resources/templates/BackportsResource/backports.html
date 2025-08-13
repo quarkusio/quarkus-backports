@@ -1,10 +1,24 @@
 {#include BackportsResource/base}
 	{#page-class}backports{/page-class}
 	{#title}Backports for {milestone.title}{/title}
+	{#additionalTitleElements}
+		<div class="header item">
+			<a class="ui labeled icon button blue tiny" target="_blank" href="{pullRequestsForBackportLabelUrl}">
+				<i class="github icon"></i>
+				View pull requests on GitHub
+			</a>
+		</div>
+	{/additionalTitleElements}
 	{#body}
 		<div class="ui main container">
-			<a target="_blank"
-			   href="https://github.com/{repository}/issues?q=state%3Aclosed%20label%3A{label}">GitHub search link</a>
+			<h2>Pull requests to backport</h2>
+			<div class="ui icon message blue small">
+				<i class="question circle outline icon"></i>
+				<div class="content">
+					<p>We list here the <a target="_blank" href="{pullRequestsForBackportLabelUrl}">pull requests considered for backporting</a>.</p>
+					<p>Use the cherry-pick button to copy the cherry-pick command, run it, and then mark the pull request as backported once done.</p>
+				</div>
+			</div>
 			<table class="ui celled striped table">
 				<thead>
 					<tr>
@@ -15,7 +29,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#for pr in prs}
+					{#for pr in pullRequestsToBackport}
 					{#set commits=pr.commits}
 					<tr>
 						<td style="text-align:right">{pr_count}</td>
@@ -41,7 +55,7 @@
 									<div class="item">
 										<div class="right floated content">
 											{#if commits.size > 1}
-												<div class="ui compact icon button clipboard-button" data-clipboard-text="git cherry-pick -x {commit.oid}">
+												<div class="ui compact icon button clipboard-button" data-clipboard-text="git cherry-pick -x {commit.oid}" title="Copy cherry-pick command for this commit">
 													<i class="clipboard outline icon"></i>
 												</div>
 											{/if}
@@ -59,13 +73,13 @@
 							</div>
 						</td>
 						<td class="center aligned">
-							<div class="ui icon button clipboard-button" data-clipboard-text="git cherry-pick -x {#for commit in commits}{commit.oid} {/}">
+							<div class="ui icon button clipboard-button" data-clipboard-text="git cherry-pick -x {#for commit in commits}{commit.oid} {/}" title="Copy cherry-pick command for all commits">
 								<i class="clipboard outline icon"></i>
 								<div class="floating ui blue mini circular label">{commits.size}</div>
 							</div>
 						</td>
 						<td class="center aligned">
-							<div class="ui icon button blue" id="mark-backported-{pr.number}">
+							<div class="ui icon button blue" id="mark-backported-{pr.number}" title="Mark as backported">
 								<i class="arrow alternate circle right icon"></i>
 							</div>
 							<script type="text/javascript">
@@ -96,6 +110,178 @@
 					{/for}
 				</tbody>
 			</table>
+			{#if openPullRequestsTargetingBranch}
+			<hr>
+			<h2>Open pull requests targeting {milestone.minorVersion}</h2>
+			<div class="ui icon message blue small">
+				<i class="question circle outline icon"></i>
+				<div class="content">
+					<p>We only list here the <a href="{openPullRequestsTargetingBranchUrl}" target="_blank">open pull requests that target branch {milestone.minorVersion}</a>.</p>
+					<p>They should probably get merged at some point.</p>
+				</div>
+			</div>
+			<table class="ui celled striped table">
+				<thead>
+				<tr>
+					<th class="one wide" style="width:10px; text-align:right">#</th>
+					<th class="thirteen wide">Pull Request</th>
+					<th class="one wide">N/A</th>
+					<th class="one wide">N/A</th>
+				</tr>
+				</thead>
+				<tbody>
+				{#for pr in openPullRequestsTargetingBranch}
+				{#set commits=pr.commits}
+				<tr>
+					<td style="text-align:right">{pr_count}</td>
+					<td>
+						<div>
+							<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" target="_blank" href="{pr.url}">{pr.title}</a>
+							<span style="float:right">
+									{#if pr.linkedIssues.size > 0}
+										<div class="ui icon mini button issues" data-variation="wide" data-position="bottom center" data-html="<div class='header'>Linked issues</div><div class='content'>{#for issue in pr.linkedIssues}&rsaquo; <a href='{issue.url}' target='_blank'>{issue.number}</a> {issue.title}<br />{/}</div>">
+											<i class="exclamation circle icon"></i>
+											<span class="floating ui red mini circular label">{pr.linkedIssues.size}</span>
+										</div>
+									{/}
+								<!-- bots don't have a proper login -->
+									{#if pr.author.login}
+										<span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span>
+									{/}
+								</span>
+						</div>
+						<div class="ui piled segment commits" id="commits-{pr.number}">
+							<div class="ui relaxed divided list">
+								{#for commit in commits}
+								<div class="item">
+									<div class="right floated content">
+										&nbsp;
+									</div>
+									<div class="middle aligned content">
+										<div class="commit">
+											<i class="git alternate icon"></i>
+											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
+											<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
+										</div>
+									</div>
+								</div>
+								{/}
+							</div>
+						</div>
+					</td>
+					<td class="center aligned">
+						&nbsp;
+					</td>
+					<td class="center aligned">
+						&nbsp;
+					</td>
+				</tr>
+				{/set}
+				{#else}
+				<tr>
+					<td colspan="3">
+						All pull requests targeting this branch have a milestone set.
+					</td>
+				</tr>
+				{/for}
+				</tbody>
+			</table>
+			{/if}
+			{#if mergedPullRequestsTargetingBranchWithNoMilestone}
+			<hr>
+			<h2>Merged pull requests targeting {milestone.minorVersion} with no milestone</h2>
+			<div class="ui icon message blue small">
+				<i class="question circle outline icon"></i>
+				<div class="content">
+					<p>We only list here the <a href="{mergedPullRequestsWithNoMilestoneUrl}" target="_blank">merged pull requests targeting branch {milestone.minorVersion} which don't have a milestone set</a>.</p>
+					<p>You can use this list to set the milestone to {milestone.title} <b>(if it's the right one!)</b> using the appropriate button.</p>
+				</div>
+			</div>
+			<table class="ui celled striped table">
+				<thead>
+				<tr>
+					<th class="one wide" style="width:10px; text-align:right">#</th>
+					<th class="thirteen wide">Pull Request</th>
+					<th class="one wide">N/A</th>
+					<th class="one wide">Done</th>
+				</tr>
+				</thead>
+				<tbody>
+				{#for pr in mergedPullRequestsTargetingBranchWithNoMilestone}
+				{#set commits=pr.commits}
+				<tr>
+					<td style="text-align:right">{pr_count}</td>
+					<td>
+						<div>
+							<code class="ui label tiny">#{pr.number}</code> <a class="pr-title" target="_blank" href="{pr.url}">{pr.title}</a>
+							<span style="float:right">
+									{#if pr.linkedIssues.size > 0}
+										<div class="ui icon mini button issues" data-variation="wide" data-position="bottom center" data-html="<div class='header'>Linked issues</div><div class='content'>{#for issue in pr.linkedIssues}&rsaquo; <a href='{issue.url}' target='_blank'>{issue.number}</a> {issue.title}<br />{/}</div>">
+											<i class="exclamation circle icon"></i>
+											<span class="floating ui red mini circular label">{pr.linkedIssues.size}</span>
+										</div>
+									{/}
+								<!-- bots don't have a proper login -->
+									{#if pr.author.login}
+										<span class="ui image label"><img src="{pr.author.avatarUrl}" /> {pr.author.login}</span>
+									{/}
+								</span>
+						</div>
+						<div class="ui piled segment commits" id="commits-{pr.number}">
+							<div class="ui relaxed divided list">
+								{#for commit in commits}
+								<div class="item">
+									<div class="right floated content">
+										&nbsp;
+									</div>
+									<div class="middle aligned content">
+										<div class="commit">
+											<i class="git alternate icon"></i>
+											<code class="ui tiny label"><a href="{commit.url}">{commit.abbreviatedOid}</a></code>
+											<a href="{commit.url}" target="_blank">{commit.abbreviatedMessage}</a>
+										</div>
+									</div>
+								</div>
+								{/}
+							</div>
+						</div>
+					</td>
+					<td class="center aligned">
+						&nbsp;
+					</td>
+					<td class="center aligned">
+						<div class="ui icon button blue" id="mark-merged-{pr.number}" title="Mark as merged">
+							<i class="arrow alternate circle right icon"></i>
+						</div>
+						<script type="text/javascript">
+							$('#mark-merged-{pr.number}').click(function() {
+                                $('#mark-merged-{pr.number}').prop("onclick", null).off("click");
+                                $('#mark-merged-{pr.number}').addClass('loading').removeClass('blue');
+
+                                $.ajax('/backports/{milestone.title}/merged/{pr.number}/').done(function() {
+                                    $('#mark-merged-{pr.number}').removeClass('loading').addClass('positive disabled');
+                                    $('#mark-merged-{pr.number} i').removeClass('arrow alternate circle right').addClass('check');
+                                    $('#mark-merged-{pr.number}').closest('tr').addClass('positive');
+                                    $('#commits-{pr.number}').toggle();
+                                }).fail(function() {
+                                    $('#mark-merged-{pr.number}').removeClass('loading').addClass('negative disabled');
+                                    $('#mark-merged-{pr.number} i').removeClass('reply').addClass('exclamation triangle');
+                                });
+                            });
+						</script>
+					</td>
+				</tr>
+				{/set}
+				{#else}
+				<tr>
+					<td colspan="3">
+						All pull requests targeting this branch have a milestone set.
+					</td>
+				</tr>
+				{/for}
+				</tbody>
+			</table>
+			{/if}
 		</div>
 	{/body}
 	{#scripts}

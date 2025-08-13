@@ -1,4 +1,4 @@
-.ui.main-menu .item {
+.ui.main-menu .header.item.title {
 	font-size: 20px;
 }
 
@@ -53,4 +53,15 @@
 }
 .multi-commit {
 	padding-top: 0.2em;
+}
+
+.message.blue a {
+	text-decoration: underline;
+}
+
+hr {
+	border: none;
+	height: 1px;
+	background: linear-gradient(to right, transparent, rgba(0,0,0,0.2), transparent);
+	margin: 1.5em 0;
 }

@@ -24,6 +24,8 @@ public class PullRequest implements Comparable<PullRequest> {
 
     public Date createdAt;
 
+    public boolean merged;
+
     public Date mergedAt;
 
     public Milestone milestone;
@@ -70,16 +72,17 @@ public class PullRequest implements Comparable<PullRequest> {
 
     @Override
     public int compareTo(PullRequest o) {
-        return mergedAt.compareTo(o.mergedAt);
+        if (merged) {
+            return mergedAt.compareTo(o.mergedAt);
+        } else {
+            return Integer.compare(number, o.number);
+        }
     }
 
     public static PullRequest fromString(String numberStr) throws IOException {
         int number = Integer.parseInt(numberStr);
         final GitHubService service = CDI.current().select(GitHubService.class).get();
-        return service.getBackportCandidatesPullRequests().stream()
-                .filter(pr -> pr.number == number)
-                .findFirst()
-                .orElse(null);
+        return service.getPullRequest(number);
     }
 
 }
