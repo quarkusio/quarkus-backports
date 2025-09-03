@@ -10,6 +10,8 @@
         merged
         mergedAt
         createdAt
+        headRefName
+        baseRefName
         labels (last: 100) {
           nodes {
             name

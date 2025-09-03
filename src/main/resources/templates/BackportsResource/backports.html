@@ -168,10 +168,32 @@
 						</div>
 					</td>
 					<td class="center aligned">
-						&nbsp;
+						<i class="hand point left icon" title="Merge manually"></i>
 					</td>
 					<td class="center aligned">
-						&nbsp;
+                        {#if pr.backport}
+							&nbsp;
+                        {#else}
+						<div class="ui icon button blue" id="mark-merged-{pr.number}" title="Affect milestone">
+							<i class="arrow alternate circle right icon"></i>
+						</div>
+						<script type="text/javascript">
+							$('#mark-merged-{pr.number}').click(function() {
+								$('#mark-merged-{pr.number}').prop("onclick", null).off("click");
+								$('#mark-merged-{pr.number}').addClass('loading').removeClass('blue');
+
+								$.ajax('/backports/{milestone.title}/merged/{pr.number}/').done(function() {
+									$('#mark-merged-{pr.number}').removeClass('loading').addClass('positive disabled');
+									$('#mark-merged-{pr.number} i').removeClass('arrow alternate circle right').addClass('check');
+									$('#mark-merged-{pr.number}').closest('tr').addClass('positive');
+									$('#commits-{pr.number}').toggle();
+								}).fail(function() {
+									$('#mark-merged-{pr.number}').removeClass('loading').addClass('negative disabled');
+									$('#mark-merged-{pr.number} i').removeClass('reply').addClass('exclamation triangle');
+								});
+							});
+						</script>
+                        {/if}
 					</td>
 				</tr>
 				{/set}
@@ -235,19 +257,19 @@
 						</div>
 						<script type="text/javascript">
 							$('#mark-merged-{pr.number}').click(function() {
-                                $('#mark-merged-{pr.number}').prop("onclick", null).off("click");
-                                $('#mark-merged-{pr.number}').addClass('loading').removeClass('blue');
+								$('#mark-merged-{pr.number}').prop("onclick", null).off("click");
+								$('#mark-merged-{pr.number}').addClass('loading').removeClass('blue');
 
-                                $.ajax('/backports/{milestone.title}/merged/{pr.number}/').done(function() {
-                                    $('#mark-merged-{pr.number}').removeClass('loading').addClass('positive disabled');
-                                    $('#mark-merged-{pr.number} i').removeClass('arrow alternate circle right').addClass('check');
-                                    $('#mark-merged-{pr.number}').closest('tr').addClass('positive');
-                                    $('#commits-{pr.number}').toggle();
-                                }).fail(function() {
-                                    $('#mark-merged-{pr.number}').removeClass('loading').addClass('negative disabled');
-                                    $('#mark-merged-{pr.number} i').removeClass('reply').addClass('exclamation triangle');
-                                });
-                            });
+								$.ajax('/backports/{milestone.title}/merged/{pr.number}/').done(function() {
+									$('#mark-merged-{pr.number}').removeClass('loading').addClass('positive disabled');
+									$('#mark-merged-{pr.number} i').removeClass('arrow alternate circle right').addClass('check');
+									$('#mark-merged-{pr.number}').closest('tr').addClass('positive');
+									$('#commits-{pr.number}').toggle();
+								}).fail(function() {
+									$('#mark-merged-{pr.number}').removeClass('loading').addClass('negative disabled');
+									$('#mark-merged-{pr.number} i').removeClass('reply').addClass('exclamation triangle');
+								});
+							});
 						</script>
 					</td>
 				</tr>

@@ -5,12 +5,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import jakarta.enterprise.inject.spi.CDI;
 
 import io.quarkus.backports.GitHubService;
 
 public class PullRequest implements Comparable<PullRequest> {
+
+    private static final Pattern BACKPORT_PULL_REQUEST_PATTERN = Pattern
+            .compile("^[0-9]+\\.[0-9]+(\\.[0-9]+)*-backport.*");
 
     public String id;
 
@@ -38,6 +42,17 @@ public class PullRequest implements Comparable<PullRequest> {
 
     public Set<String> labels;
 
+    public String headRefName;
+
+    public String baseRefName;
+
+    public boolean isBackport() {
+        if (headRefName == null) {
+            return false;
+        }
+        return BACKPORT_PULL_REQUEST_PATTERN.matcher(headRefName).matches();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -50,7 +65,7 @@ public class PullRequest implements Comparable<PullRequest> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(number);
+        return Objects.hashCode(number);
     }
 
     @Override

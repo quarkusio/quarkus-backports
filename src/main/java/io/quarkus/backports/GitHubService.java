@@ -236,7 +236,7 @@ public class GitHubService {
         // we will exclude the backport PRs from this list, and all the PRs with area/infra
         return extractPullRequestsFromResponse(response).stream()
                 .filter(pr -> !pr.labels.contains(LABEL_AREA_INFRA))
-                .filter(pr -> !BACKPORT_PULL_REQUEST_PATTERN.matcher(pr.title).matches())
+                .filter(pr -> !BACKPORT_PULL_REQUEST_PATTERN.matcher(pr.title).matches() && !pr.isBackport())
                 .toList();
     }
 
@@ -284,6 +284,8 @@ public class GitHubService {
             pullRequest.body = pr.getString("body");
             pullRequest.author = pr.getJsonObject("author").mapTo(User.class);
             pullRequest.commits = commitList;
+            pullRequest.headRefName = pr.getString("headRefName");
+            pullRequest.baseRefName = pr.getString("baseRefName");
 
             // Milestone
             JsonObject milestoneJson = pr.getJsonObject("milestone");
