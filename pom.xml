@@ -18,7 +18,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
         <surefire-plugin.version>3.5.3</surefire-plugin.version>
-        <formatter-plugin.version>2.27.0</formatter-plugin.version>
+        <formatter-plugin.version>2.29.0</formatter-plugin.version>
         <impsort-plugin.version>1.12.0</impsort-plugin.version>
         <maven-artifact.version>3.9.11</maven-artifact.version>
         <assertj.version>3.27.4</assertj.version>
