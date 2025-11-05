@@ -21,7 +21,7 @@
         <formatter-plugin.version>2.29.0</formatter-plugin.version>
         <impsort-plugin.version>1.12.0</impsort-plugin.version>
         <maven-artifact.version>3.9.11</maven-artifact.version>
-        <assertj.version>3.27.4</assertj.version>
+        <assertj.version>3.27.6</assertj.version>
     </properties>
     <dependencyManagement>
         <dependencies>
