@@ -70,22 +70,25 @@ public class BackportsResource {
             throws IOException {
         gitHub.clearPullRequestCache();
 
-        ProjectV2 projectV2 = gitHub.prepareRequirements(milestone);
+        if (GitHubService.isMicroVersion(milestone.title())) {
+            ProjectV2 projectV2 = gitHub.prepareRequirements(milestone);
 
-        if (gitHub.isMilestonePresentInStatusField(projectV2.id, milestone)) {
-            return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests(),
-                    gitHub.getOpenPullRequestsTargetingBranch(milestone),
-                    gitHub.getMergedPullRequestsTargetingBranchWithNoMilestone(milestone),
-                    gitHub.getPullRequestsForBackportLabelUrl(),
-                    gitHub.getOpenPullRequestsTargetingBranchUrl(milestone),
-                    gitHub.getMergedPullRequestsWithNoMilestoneUrl(milestone));
-        } else {
-            return Templates.createStatusOptionForMilestone(projectV2, milestone,
-                    gitHub.getStatusFieldSettingsUrl(projectV2.number),
-                    UriBuilder.fromPath("/backports/{milestone}/refresh-status-field/{projectId}")
-                            .resolveTemplate("milestone", milestone.title()).resolveTemplate("projectId", projectV2.id).build()
-                            .toString());
+            if (!gitHub.isMilestonePresentInStatusField(projectV2.id, milestone)) {
+                return Templates.createStatusOptionForMilestone(projectV2, milestone,
+                        gitHub.getStatusFieldSettingsUrl(projectV2.number),
+                        UriBuilder.fromPath("/backports/{milestone}/refresh-status-field/{projectId}")
+                                .resolveTemplate("milestone", milestone.title()).resolveTemplate("projectId", projectV2.id)
+                                .build()
+                                .toString());
+            }
         }
+
+        return Templates.backports(milestone, gitHub.getBackportCandidatesPullRequests(),
+                gitHub.getOpenPullRequestsTargetingBranch(milestone),
+                gitHub.getMergedPullRequestsTargetingBranchWithNoMilestone(milestone),
+                gitHub.getPullRequestsForBackportLabelUrl(),
+                gitHub.getOpenPullRequestsTargetingBranchUrl(milestone),
+                gitHub.getMergedPullRequestsWithNoMilestoneUrl(milestone));
     }
 
     @GET

@@ -54,6 +54,7 @@ public class GitHubService {
     private static final String OPTION_DESCRIPTION = "Backports for %s";
     private static final String STATUS_FIELD = "Status";
     private static final Pattern MICRO_VERSION_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+(\\..*)*");
+    private static final Pattern MINOR_VERSION_MILESTONE_PATTERN = Pattern.compile("(\\d+\\.\\d+) - \\d+\\.x");
     private static final String COLUMN_COLOR = "BLUE";
     private static final String STATUS_FIELD_SETTINGS_URL = "https://github.com/orgs/%s/projects/%s/settings/fields/Status";
     private static final String PULL_REQUESTS_FOR_BACKPORT_LABEL_URL = "https://github.com/%s/issues?q=state%%3Aclosed%%20is%%3Amerged%%20label%%3A%s";
@@ -184,13 +185,21 @@ public class GitHubService {
             JsonObject milestoneJsonObject = milestones.getJsonObject(i);
             String version = milestoneJsonObject.getString("title");
 
-            if (!MICRO_VERSION_PATTERN.matcher(version).matches()) {
-                continue;
+            String minorVersion;
+            if (MICRO_VERSION_PATTERN.matcher(version).matches()) {
+                minorVersion = getMinorVersion(version);
+            } else {
+                var minorMatcher = MINOR_VERSION_MILESTONE_PATTERN.matcher(version);
+                if (minorMatcher.matches()) {
+                    minorVersion = minorMatcher.group(1);
+                } else {
+                    continue;
+                }
             }
 
             milestoneList.add(new Milestone(milestoneJsonObject.getString("id"),
                     version,
-                    getMinorVersion(version)));
+                    minorVersion));
         }
 
         milestoneList.sort(Comparator.comparing(m -> new ComparableVersion(m.title()), Comparator.reverseOrder()));
@@ -376,15 +385,17 @@ public class GitHubService {
             }
         }
 
-        // Add to ProjectV2 based on milestone version
-        try {
-            addIssueOrPullRequestToProjectV2(pullRequest.id, newMilestone.minorVersion(), newMilestone.title());
+        // Add to ProjectV2 based on milestone version (only for micro versions)
+        if (isMicroVersion(newMilestone.title())) {
+            try {
+                addIssueOrPullRequestToProjectV2(pullRequest.id, newMilestone.minorVersion(), newMilestone.title());
 
-            for (Issue issue : pullRequest.linkedIssues) {
-                addIssueOrPullRequestToProjectV2(issue.id, newMilestone.minorVersion(), newMilestone.title());
+                for (Issue issue : pullRequest.linkedIssues) {
+                    addIssueOrPullRequestToProjectV2(issue.id, newMilestone.minorVersion(), newMilestone.title());
+                }
+            } catch (IOException e) {
+                LOG.errorf(e, "Failed to add pull request: %s to project column", pullRequest.number);
             }
-        } catch (IOException e) {
-            LOG.errorf(e, "Failed to add pull request: %s to project column", pullRequest.number);
         }
     }
 
@@ -767,6 +778,10 @@ public class GitHubService {
                 .getJsonObject("projectV2Field");
 
         return fieldData.mapTo(ProjectV2Field.class);
+    }
+
+    public static boolean isMicroVersion(String version) {
+        return MICRO_VERSION_PATTERN.matcher(version).matches();
     }
 
     public static String getMinorVersion(String version) {
