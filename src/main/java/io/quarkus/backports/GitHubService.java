@@ -242,8 +242,11 @@ public class GitHubService {
             throw new IOException(response.toString());
         }
 
-        // we will exclude the backport PRs from this list, and all the PRs with area/infra
+        // GitHub's search "base:" qualifier matches branches by prefix (e.g. "3.40" also matches
+        // "3.40.1-emergency"), so we need to filter for an exact base branch match ourselves.
+        // We also exclude the backport PRs from this list, and all the PRs with area/infra
         return extractPullRequestsFromResponse(response).stream()
+                .filter(pr -> pr.baseRefName.equals(milestone.minorVersion()))
                 .filter(pr -> !pr.labels.contains(LABEL_AREA_INFRA))
                 .filter(pr -> !BACKPORT_PULL_REQUEST_PATTERN.matcher(pr.title).matches() && !pr.isBackport())
                 .toList();
